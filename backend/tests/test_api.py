@@ -24,7 +24,7 @@ def test_case_study_returns_default_santa_ana_project_with_references():
     body = r.json()
     assert body["id"] == "santa-ana-1921-w-washington"
     assert body["is_default"] and body["case_type"] == "documented_site"
-    assert body["candidate_home_counts"] == [6]
+    assert body["candidate_home_counts"] == [4, 6, 8] and body["default_home_count"] == 6
     assert len(body["reference_links"]) >= 4
     refs = {r["id"]: r for r in body["reference_sources"]["records"]}
     assert refs["pmms-30yr-2026-11-05"]["value"] == 0.0718

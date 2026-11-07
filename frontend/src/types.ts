@@ -137,6 +137,8 @@ export interface Project {
   sources: ProjectSource[];
   reference_links: ReferenceLink[];
   candidate_home_counts: number[];
+  default_home_count?: number | null;
+  scenario_labels: Record<string, string>;
   household: HouseholdInputs;
   development: DevelopmentInputs;
   funding_sources: FundingSource[];
@@ -162,10 +164,55 @@ export interface AffordabilityResult {
   affordability_valid: boolean;
 }
 
-// Grows in milestone 3 (funding, scenarios, recommendation).
+export interface FundingRowResult {
+  id: string;
+  name: string;
+  amount: number | null;
+  counted_amount: number;
+  counted: boolean;
+  reason: string;
+}
+
+export interface FundingSummary {
+  counted_project_support: number;
+  committed_assumed_amount: number;
+  conditional_modeled_amount: number;
+  potential_uncommitted_amount: number;
+  excluded_amount: number;
+  excluded_instruments: string[];
+  has_illustrative_commitments: boolean;
+  rows: FundingRowResult[];
+}
+
+export interface ScenarioResult {
+  homes: number;
+  land_cost: number;
+  site_work_cost: number;
+  hard_cost: number;
+  soft_cost: number;
+  contingency: number;
+  financing_cost: number;
+  total_development_cost: number;
+  sale_price_per_home: number;
+  sale_proceeds: number;
+  counted_project_support: number;
+  raw_gap: number;
+  remaining_gap: number;
+  modeled_surplus: number;
+  gap_per_home: number;
+  additional_budget_headroom: number;
+  within_subsidy_cap: boolean;
+  within_capacity: boolean;
+  eligible: boolean;
+}
+
 export interface CompareResponse {
-  engine_status?: string;
   affordability: AffordabilityResult;
+  funding: FundingSummary;
+  scenarios: ScenarioResult[];
+  recommended_home_count: number | null;
+  recommendation_reason: string;
+  minimum_needed_if_none_fit: number | null;
   candidate_home_counts: number[];
   warnings: string[];
 }

@@ -8,10 +8,13 @@ import {
   postCompare,
   updateProject,
 } from "./api";
+import { DevelopmentControls } from "./components/DevelopmentControls";
 import { FinancialSummary } from "./components/FinancialSummary";
+import { FundingStack } from "./components/FundingStack";
 import { HouseholdControls, type HouseholdKey, type HouseholdProvenance } from "./components/HouseholdControls";
 import { ProjectBar } from "./components/ProjectBar";
 import { ProvenanceTag } from "./components/ProvenanceTag";
+import { ScenarioComparison } from "./components/ScenarioComparison";
 import { SiteFacts } from "./components/SiteFacts";
 import type { CompareRequest, CompareResponse, InputProvenance, Project, ProjectSummary, Provenance } from "./types";
 
@@ -27,8 +30,7 @@ function toRequest(p: Project): CompareRequest {
   });
 }
 
-const householdProvOf = (p: Project): Record<string, InputProvenance> =>
-  Object.fromEntries(Object.entries(p.input_provenance).filter(([k]) => k.startsWith("household.")));
+const defaultCount = (p: Project) => p.default_home_count ?? p.candidate_home_counts[0];
 
 const CASE_TYPE_LABEL: Record<string, string> = {
   documented_site: "Real documented site",
@@ -40,8 +42,9 @@ export default function App() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [inputs, setInputs] = useState<CompareRequest | null>(null);
-  // Household field provenance keyed "household.<field>", seeded from the project file.
+  // Input provenance keyed "<section>.<field>", seeded from the project file.
   const [prov, setProv] = useState<Record<string, InputProvenance>>({});
+  const [selectedHomes, setSelectedHomes] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -54,7 +57,8 @@ export default function App() {
   const show = useCallback((p: Project) => {
     setProject(p);
     setInputs(toRequest(p));
-    setProv(householdProvOf(p));
+    setProv(structuredClone(p.input_provenance));
+    setSelectedHomes(defaultCount(p));
   }, []);
 
   const run = useCallback(async (fn: () => Promise<void>) => {
@@ -88,18 +92,13 @@ export default function App() {
     if (!project || !inputs) return false;
     return (
       JSON.stringify(inputs) !== JSON.stringify(toRequest(project)) ||
-      JSON.stringify(prov) !== JSON.stringify(householdProvOf(project))
+      JSON.stringify(prov) !== JSON.stringify(project.input_provenance)
     );
   }, [project, inputs, prov]);
 
   const confirmDiscard = () => !dirty || window.confirm("Discard unsaved edits to this project?");
 
-  const mergedProvenance = (): Record<string, InputProvenance> => {
-    const nonHousehold = Object.fromEntries(
-      Object.entries(project?.input_provenance ?? {}).filter(([k]) => !k.startsWith("household.")),
-    );
-    return { ...nonHousehold, ...prov };
-  };
+  const mergedProvenance = (): Record<string, InputProvenance> => prov;
 
   // Debounced analysis on every input change; out-of-order responses are dropped.
   useEffect(() => {
@@ -127,17 +126,19 @@ export default function App() {
   }, [inputs]);
 
   const stale = pending || analysisError !== null;
+  const scenario = analysis?.scenarios.find((s) => s.homes === selectedHomes) ?? null;
   const refs = project?.reference_sources.records ?? [];
   const rateRefs = refs
     .filter((r) => r.source_kind === "published_rate" && r.value !== undefined)
     .sort((a, b) => (b.effective_date ?? "").localeCompare(a.effective_date ?? ""));
   const incomeLimitRef = refs.find((r) => r.id === "hcd-state-il-2026-orange");
 
+  const householdProv = Object.entries(prov).filter(([k]) => k.startsWith("household."));
   const householdKinds: HouseholdProvenance = Object.fromEntries(
-    Object.entries(prov).map(([k, v]) => [k.slice("household.".length), v.kind as Provenance]),
+    householdProv.map(([k, v]) => [k.slice("household.".length), v.kind as Provenance]),
   );
   const householdNotes = Object.fromEntries(
-    Object.entries(prov)
+    householdProv
       .filter(([, v]) => v.note)
       .map(([k, v]) => [k.slice("household.".length), v.note!]),
   ) as Partial<Record<HouseholdKey, string>>;
@@ -279,8 +280,47 @@ export default function App() {
 
         <section className="panel">
           <h2>Financial summary</h2>
-          <FinancialSummary analysis={analysis} stale={stale} />
+          <FinancialSummary analysis={analysis} scenario={scenario} stale={stale} />
         </section>
+
+        {inputs && project && (
+          <>
+            <section className="panel">
+              <h2>Development</h2>
+              <DevelopmentControls
+                value={inputs.development}
+                provenance={prov}
+                candidateCounts={inputs.candidate_home_counts}
+                selected={selectedHomes}
+                scenarioLabels={project.scenario_labels}
+                onSelect={setSelectedHomes}
+                onChange={(development, key) => {
+                  setInputs({ ...inputs, development });
+                  setProv((p) => ({ ...p, [`development.${key}`]: { kind: "user" } }));
+                }}
+              />
+            </section>
+            <section className="panel span2">
+              <h2>Funding stack</h2>
+              <FundingStack
+                rows={inputs.funding_sources}
+                summary={analysis?.funding ?? null}
+                stale={stale}
+                onChange={(funding_sources) => setInputs({ ...inputs, funding_sources })}
+              />
+            </section>
+            <section className="panel wide">
+              <h2>Compare configurations</h2>
+              <ScenarioComparison
+                analysis={analysis}
+                selected={selectedHomes}
+                scenarioLabels={project.scenario_labels}
+                stale={stale}
+                onSelect={setSelectedHomes}
+              />
+            </section>
+          </>
+        )}
 
         {project && (
           <section className="panel wide">

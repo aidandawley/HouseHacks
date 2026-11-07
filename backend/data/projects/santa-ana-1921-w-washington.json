@@ -13,43 +13,259 @@
     "units_per_building": 2,
     "visualization_status": "schematic_not_to_scale",
     "facts": [
-      {"key": "address", "label": "Address", "value": "1921 W. Washington Avenue, Santa Ana, CA", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "apn", "label": "Assessor parcel number", "value": "405-101-37", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "developer", "label": "Applicant & property owner", "value": "Habitat for Humanity of Orange County", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "site_area", "label": "Site area", "value": 0.37, "unit": "acres (approx.)", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 5},
-      {"key": "buildings", "label": "Buildings", "value": "3 duplexes", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "units", "label": "For-sale homes", "value": 6, "unit": "homes", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1, "note": "3 base units under R-2 standards + 3 via State Density Bonus Law (100% affordable)."},
-      {"key": "floor_area", "label": "Total new floor area", "value": 10882, "unit": "sq ft", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1, "note": "Total new floor area for the whole development, not parcel area or per-home sellable area."},
-      {"key": "floor_area_per_home", "label": "Average floor area per home", "value": 1813.67, "unit": "sq ft", "status": "DERIVED", "note": "10,882 ÷ 6, rounded. An average of total new floor area; not a documented per-unit living area."},
-      {"key": "parking", "label": "On-site parking", "value": 15, "unit": "spaces", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "income_target", "label": "Income target", "value": "Lower-income households, < 80% of AMI", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 1},
-      {"key": "entitlement", "label": "Planning action", "value": "TTM No. 2023-05 approved as conditioned, June 10, 2024", "status": "DOCUMENTED", "source_id": "sa-reso-2024-10", "page": 8},
-      {"key": "city_grant_max", "label": "City Inclusionary Grant (conditional)", "value": 2200000, "unit": "USD, up to", "status": "DOCUMENTED", "source_id": "sa-reso-2024-11", "page": 1, "note": "Ceiling of a Conditional Grant Agreement. Not cash disbursed, not project cost, not the gap."},
-      {"key": "grant_condition", "label": "Grant disbursement condition", "value": "Affordability covenants (Density Bonus Agreement) recorded before any disbursement", "status": "DOCUMENTED", "source_id": "sa-reso-2024-11", "page": 2},
-      {"key": "covenant", "label": "Affordability restriction", "value": 45, "unit": "years (no less than)", "status": "DOCUMENTED", "source_id": "sa-reso-2024-11", "page": 2},
-      {"key": "grant_disbursed", "label": "City grant actually disbursed", "value": null, "status": "UNKNOWN"},
-      {"key": "total_development_cost", "label": "Actual total development cost", "value": null, "status": "UNKNOWN"},
-      {"key": "land_cost", "label": "Actual land / acquisition cost", "value": null, "status": "UNKNOWN"},
-      {"key": "sale_prices", "label": "Actual home sale prices", "value": null, "status": "UNKNOWN"},
-      {"key": "parcel_geometry", "label": "Parcel boundary / building footprints", "value": null, "status": "UNKNOWN", "note": "3D view is schematic, not to scale."},
-      {"key": "construction_status", "label": "Current construction status", "value": null, "status": "UNKNOWN", "note": "Check a dated Habitat OC update before describing status."}
+      {
+        "key": "address",
+        "label": "Address",
+        "value": "1921 W. Washington Avenue, Santa Ana, CA",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "apn",
+        "label": "Assessor parcel number",
+        "value": "405-101-37",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "developer",
+        "label": "Applicant & property owner",
+        "value": "Habitat for Humanity of Orange County",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "site_area",
+        "label": "Site area",
+        "value": 0.37,
+        "unit": "acres (approx.)",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 5
+      },
+      {
+        "key": "buildings",
+        "label": "Buildings",
+        "value": "3 duplexes",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "units",
+        "label": "For-sale homes",
+        "value": 6,
+        "unit": "homes",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1,
+        "note": "3 base units under R-2 standards + 3 via State Density Bonus Law (100% affordable)."
+      },
+      {
+        "key": "floor_area",
+        "label": "Total new floor area",
+        "value": 10882,
+        "unit": "sq ft",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1,
+        "note": "Total new floor area for the whole development, not parcel area or per-home sellable area."
+      },
+      {
+        "key": "floor_area_per_home",
+        "label": "Average floor area per home",
+        "value": 1813.67,
+        "unit": "sq ft",
+        "status": "DERIVED",
+        "note": "10,882 ÷ 6, rounded. An average of total new floor area; not a documented per-unit living area."
+      },
+      {
+        "key": "parking",
+        "label": "On-site parking",
+        "value": 15,
+        "unit": "spaces",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "income_target",
+        "label": "Income target",
+        "value": "Lower-income households, < 80% of AMI",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 1
+      },
+      {
+        "key": "entitlement",
+        "label": "Planning action",
+        "value": "TTM No. 2023-05 approved as conditioned, June 10, 2024",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-10",
+        "page": 8
+      },
+      {
+        "key": "city_grant_max",
+        "label": "City Inclusionary Grant (conditional)",
+        "value": 2200000,
+        "unit": "USD, up to",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-11",
+        "page": 1,
+        "note": "Ceiling of a Conditional Grant Agreement. Not cash disbursed, not project cost, not the gap."
+      },
+      {
+        "key": "grant_condition",
+        "label": "Grant disbursement condition",
+        "value": "Affordability covenants (Density Bonus Agreement) recorded before any disbursement",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-11",
+        "page": 2
+      },
+      {
+        "key": "covenant",
+        "label": "Affordability restriction",
+        "value": 45,
+        "unit": "years (no less than)",
+        "status": "DOCUMENTED",
+        "source_id": "sa-reso-2024-11",
+        "page": 2
+      },
+      {
+        "key": "grant_disbursed",
+        "label": "City grant actually disbursed",
+        "value": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "key": "total_development_cost",
+        "label": "Actual total development cost",
+        "value": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "key": "land_cost",
+        "label": "Actual land / acquisition cost",
+        "value": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "key": "sale_prices",
+        "label": "Actual home sale prices",
+        "value": null,
+        "status": "UNKNOWN"
+      },
+      {
+        "key": "parcel_geometry",
+        "label": "Parcel boundary / building footprints",
+        "value": null,
+        "status": "UNKNOWN",
+        "note": "3D view is schematic, not to scale."
+      },
+      {
+        "key": "construction_status",
+        "label": "Current construction status",
+        "value": null,
+        "status": "UNKNOWN",
+        "note": "Check a dated Habitat OC update before describing status."
+      }
     ]
   },
   "sources": [
-    {"id": "sa-reso-2024-10", "title": "Planning Commission Resolution No. 2024-10 (TTM 2023-05)", "publisher": "City of Santa Ana", "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221637/Reso24-10_1921%20W.%20Washington%20Ave.pdf", "published": "2024-06-10", "checked_at": "2026-11-07", "verification_status": "team_verified", "note": "PDF text read by the team (sha256 c4b1798f…). Page numbers are PDF pages."},
-    {"id": "sa-reso-2024-11", "title": "Planning Commission Resolution No. 2024-11 (Density Bonus Agreement)", "publisher": "City of Santa Ana", "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221638/Reso24-11_1921%20W.%20Washington%20Ave%28DBA%29.pdf", "published": "2024-06-10", "checked_at": "2026-11-07", "verification_status": "team_verified", "note": "PDF text read by the team (sha256 e03b4cfb…). Page numbers are PDF pages."},
-    {"id": "ceqanet-2024061058", "title": "CEQAnet — Habitat for Humanity: 6 Units (SCH #2024061058)", "publisher": "State of California", "url": "https://ceqanet.lci.ca.gov/2024061058", "checked_at": "2026-11-07", "verification_status": "not_checked", "note": "Listed in team case-study notes; not opened by the team."},
-    {"id": "sa-q4-housing-report", "title": "Santa Ana FY 2023–24 Q4 Housing Division report", "publisher": "City of Santa Ana", "url": "https://storage.googleapis.com/proudcity/santaanaca/2024/07/FY-2023-24-Q4-Housing-Division-Quarterly-Report-IM-CS-AL-JB.pdf", "checked_at": "2026-11-07", "verification_status": "not_checked", "note": "Listed in team case-study notes; not opened by the team."},
-    {"id": "habitat-oc-update", "title": "Habitat OC — Together we build: progress in Santa Ana", "publisher": "Habitat for Humanity of Orange County", "url": "https://habitatoc.org/together-we-build-progress-in-santa-ana-construction-update/", "checked_at": "2026-11-07", "verification_status": "not_checked", "note": "Check the post date before describing current status."}
+    {
+      "id": "sa-reso-2024-10",
+      "title": "Planning Commission Resolution No. 2024-10 (TTM 2023-05)",
+      "publisher": "City of Santa Ana",
+      "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221637/Reso24-10_1921%20W.%20Washington%20Ave.pdf",
+      "published": "2024-06-10",
+      "checked_at": "2026-11-07",
+      "verification_status": "team_verified",
+      "note": "PDF text read by the team (sha256 c4b1798f…). Page numbers are PDF pages."
+    },
+    {
+      "id": "sa-reso-2024-11",
+      "title": "Planning Commission Resolution No. 2024-11 (Density Bonus Agreement)",
+      "publisher": "City of Santa Ana",
+      "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221638/Reso24-11_1921%20W.%20Washington%20Ave%28DBA%29.pdf",
+      "published": "2024-06-10",
+      "checked_at": "2026-11-07",
+      "verification_status": "team_verified",
+      "note": "PDF text read by the team (sha256 e03b4cfb…). Page numbers are PDF pages."
+    },
+    {
+      "id": "ceqanet-2024061058",
+      "title": "CEQAnet — Habitat for Humanity: 6 Units (SCH #2024061058)",
+      "publisher": "State of California",
+      "url": "https://ceqanet.lci.ca.gov/2024061058",
+      "checked_at": "2026-11-07",
+      "verification_status": "not_checked",
+      "note": "Listed in team case-study notes; not opened by the team."
+    },
+    {
+      "id": "sa-q4-housing-report",
+      "title": "Santa Ana FY 2023–24 Q4 Housing Division report",
+      "publisher": "City of Santa Ana",
+      "url": "https://storage.googleapis.com/proudcity/santaanaca/2024/07/FY-2023-24-Q4-Housing-Division-Quarterly-Report-IM-CS-AL-JB.pdf",
+      "checked_at": "2026-11-07",
+      "verification_status": "not_checked",
+      "note": "Listed in team case-study notes; not opened by the team."
+    },
+    {
+      "id": "habitat-oc-update",
+      "title": "Habitat OC — Together we build: progress in Santa Ana",
+      "publisher": "Habitat for Humanity of Orange County",
+      "url": "https://habitatoc.org/together-we-build-progress-in-santa-ana-construction-update/",
+      "checked_at": "2026-11-07",
+      "verification_status": "not_checked",
+      "note": "Check the post date before describing current status."
+    }
   ],
   "reference_links": [
-    {"title": "HCD 2026 State Income Limits (rev. 2026-06-23)", "url": "https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf", "usage": "reference_only", "reference_source_id": "hcd-state-il-2026-orange"},
-    {"title": "Freddie Mac PMMS", "url": "https://www.freddiemac.com/pmms", "usage": "reference_only", "reference_source_id": "pmms-30yr-2026-11-05"},
-    {"title": "CA Health & Safety Code §50052.5", "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=50052.5", "usage": "reference_only", "reference_source_id": "hsc-50052-5"},
-    {"title": "HCD CalHome", "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome", "usage": "reference_only", "reference_source_id": "calhome"},
-    {"title": "CalHFA homebuyer programs", "url": "https://www.calhfa.ca.gov/homebuyer/programs/", "usage": "reference_only", "reference_source_id": "calhfa-homebuyer"}
+    {
+      "title": "HCD 2026 State Income Limits (rev. 2026-06-23)",
+      "url": "https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf",
+      "usage": "reference_only",
+      "reference_source_id": "hcd-state-il-2026-orange"
+    },
+    {
+      "title": "Freddie Mac PMMS",
+      "url": "https://www.freddiemac.com/pmms",
+      "usage": "reference_only",
+      "reference_source_id": "pmms-30yr-2026-11-05"
+    },
+    {
+      "title": "CA Health & Safety Code §50052.5",
+      "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=50052.5",
+      "usage": "reference_only",
+      "reference_source_id": "hsc-50052-5"
+    },
+    {
+      "title": "HCD CalHome",
+      "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome",
+      "usage": "reference_only",
+      "reference_source_id": "calhome"
+    },
+    {
+      "title": "CalHFA homebuyer programs",
+      "url": "https://www.calhfa.ca.gov/homebuyer/programs/",
+      "usage": "reference_only",
+      "reference_source_id": "calhfa-homebuyer"
+    }
   ],
-  "candidate_home_counts": [6],
+  "candidate_home_counts": [
+    4,
+    6,
+    8
+  ],
+  "default_home_count": 6,
+  "scenario_labels": {
+    "4": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED",
+    "6": "DOCUMENTED configuration (Resolution 2024-10)",
+    "8": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED — exceeds approved count"
+  },
   "household": {
     "annual_income": 100000,
     "household_size": 4,
@@ -64,8 +280,8 @@
     "site_work_cost": 100000,
     "gross_sqft_per_home": 1813.6667,
     "hard_cost_per_sqft": 300,
-    "soft_cost_rate": 0.20,
-    "contingency_rate": 0.10,
+    "soft_cost_rate": 0.2,
+    "contingency_rate": 0.1,
     "financing_rate": 0.05,
     "illustrative_site_capacity": 6,
     "additional_subsidy_budget": 900000
@@ -108,22 +324,63 @@
     }
   ],
   "input_provenance": {
-    "household.annual_income": {"kind": "assumption", "note": "Hypothetical household. Below the published OC 4-person Low Income limit ($148,850), consistent with the documented <80% AMI target, but not an HCD figure."},
-    "household.household_size": {"kind": "assumption"},
-    "household.housing_cost_ratio": {"kind": "assumption", "note": "Not the HSC §50052.5 formula."},
-    "household.annual_mortgage_rate": {"kind": "published_rate", "source_id": "pmms-30yr-2026-11-05"},
-    "household.mortgage_term_years": {"kind": "assumption"},
-    "household.other_housing_costs_monthly": {"kind": "assumption"},
-    "household.buyer_cash_down_payment": {"kind": "assumption"},
-    "development.land_cost": {"kind": "assumption", "note": "Placeholder; actual acquisition cost UNKNOWN. Habitat OC is documented as the property owner."},
-    "development.site_work_cost": {"kind": "assumption"},
-    "development.gross_sqft_per_home": {"kind": "derived", "source_id": "sa-reso-2024-10", "note": "10,882 sq ft total new floor area ÷ 6 homes."},
-    "development.hard_cost_per_sqft": {"kind": "assumption", "note": "Not from the 2020 Terner paper; placeholder."},
-    "development.soft_cost_rate": {"kind": "assumption"},
-    "development.contingency_rate": {"kind": "assumption"},
-    "development.financing_rate": {"kind": "assumption"},
-    "development.illustrative_site_capacity": {"kind": "documented", "source_id": "sa-reso-2024-10", "note": "6 homes approved; more is not verified buildable."},
-    "development.additional_subsidy_budget": {"kind": "assumption"}
+    "household.annual_income": {
+      "kind": "assumption",
+      "note": "Hypothetical household. Below the published OC 4-person Low Income limit ($148,850), consistent with the documented <80% AMI target, but not an HCD figure."
+    },
+    "household.household_size": {
+      "kind": "assumption"
+    },
+    "household.housing_cost_ratio": {
+      "kind": "assumption",
+      "note": "Not the HSC §50052.5 formula."
+    },
+    "household.annual_mortgage_rate": {
+      "kind": "published_rate",
+      "source_id": "pmms-30yr-2026-11-05"
+    },
+    "household.mortgage_term_years": {
+      "kind": "assumption"
+    },
+    "household.other_housing_costs_monthly": {
+      "kind": "assumption"
+    },
+    "household.buyer_cash_down_payment": {
+      "kind": "assumption"
+    },
+    "development.land_cost": {
+      "kind": "assumption",
+      "note": "Placeholder; actual acquisition cost UNKNOWN. Habitat OC is documented as the property owner."
+    },
+    "development.site_work_cost": {
+      "kind": "assumption"
+    },
+    "development.gross_sqft_per_home": {
+      "kind": "derived",
+      "source_id": "sa-reso-2024-10",
+      "note": "10,882 sq ft total new floor area ÷ 6 homes."
+    },
+    "development.hard_cost_per_sqft": {
+      "kind": "assumption",
+      "note": "Not from the 2020 Terner paper; placeholder."
+    },
+    "development.soft_cost_rate": {
+      "kind": "assumption"
+    },
+    "development.contingency_rate": {
+      "kind": "assumption"
+    },
+    "development.financing_rate": {
+      "kind": "assumption"
+    },
+    "development.illustrative_site_capacity": {
+      "kind": "documented",
+      "source_id": "sa-reso-2024-10",
+      "note": "6 homes approved; more is not verified buildable."
+    },
+    "development.additional_subsidy_budget": {
+      "kind": "assumption"
+    }
   },
   "verified_facts": {},
   "notes": "Site facts are DOCUMENTED from City of Santa Ana Resolutions 2024-10 and 2024-11 (adopted June 10, 2024). The city grant is shown at a MODELED allocation that you set ($0 by default) — never assume the full $2.2M ceiling was disbursed. No real gap for this project is known."

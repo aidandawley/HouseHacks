@@ -3,9 +3,8 @@
 Projects: a file-based directory of seed projects (read-only, checked in; the
 Santa Ana Washington Ave. case is the default demo) plus user-created projects.
 
-POST /api/compare currently returns backend-computed household affordability.
-Development cost / funding gap / scenarios are added in milestone 3; until
-then no placeholder figures are returned for them.
+POST /api/compare returns backend-computed affordability, funding stack,
+every candidate scenario and the deterministic recommendation.
 """
 
 from __future__ import annotations
@@ -17,8 +16,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from . import projects as store
-from .affordability import calculate_affordability
 from .models import CompareRequest, InputProvenance, Project
+from .optimize import compare as run_comparison
 from .provenance import UI_LABELS, load_reference_sources
 
 app = FastAPI(title="HomeForge API", version="0.2.0")
@@ -127,17 +126,7 @@ def delete_project(project_id: str) -> Response:
 
 @app.post("/api/compare")
 def compare(request: CompareRequest) -> dict:
-    affordability = calculate_affordability(request.household)
-    warnings = [
-        "Costs, buyer income, funding commitments, site capacity and mortgage inputs are "
-        "scenario assumptions; not verified Habitat project data."
-    ]
-    if affordability.warning:
-        warnings.append(affordability.warning)
-    # TODO(milestone 3): development cost, funding stack, gap and scenarios.
-    return {
-        "engine_status": "affordability_only",
-        "affordability": affordability.model_dump(mode="json", exclude={"warning"}),
-        "candidate_home_counts": request.candidate_home_counts,
-        "warnings": warnings,
-    }
+    result = run_comparison(request)
+    body = result.model_dump(mode="json", exclude={"affordability": {"warning"}})
+    body["candidate_home_counts"] = request.candidate_home_counts
+    return body

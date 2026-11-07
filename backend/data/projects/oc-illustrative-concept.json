@@ -45,6 +45,8 @@
     8,
     10
   ],
+  "default_home_count": 8,
+  "scenario_labels": {},
   "household": {
     "annual_income": 100000,
     "household_size": 4,

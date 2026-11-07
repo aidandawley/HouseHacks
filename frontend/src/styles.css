@@ -63,3 +63,20 @@ table.il td:last-child { text-align: right; font-variant-numeric: tabular-nums; 
 .facts .note { display: block; font-weight: 400; color: #7b8794; font-size: 11px; }
 .project-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .project-head h1 { font-size: 18px; margin: 0; color: #12355b; }
+.seg { display: flex; gap: 4px; }
+.seg button { min-width: 44px; }
+.seg button.on { background: #12355b; color: #fff; border-color: #12355b; }
+h3.sub { font-size: 13px; margin: 12px 0 4px; color: #12355b; }
+details > summary .kpi { display: inline-flex; width: calc(100% - 16px); border: none; }
+table.stack, table.compare { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.stack th, table.compare th { text-align: left; font-weight: 600; color: #52606d; border-bottom: 2px solid #e4e7eb; padding: 4px 6px; }
+table.stack td, table.compare td { border-bottom: 1px solid #eef1f4; padding: 6px; vertical-align: top; }
+table.stack tr.excluded td { background: #fafafa; color: #616e7c; }
+table.stack input[type="number"] { width: 110px; }
+table.stack input[type="range"] { width: 140px; display: block; }
+table.compare td { font-variant-numeric: tabular-nums; }
+table.compare tr { cursor: pointer; }
+table.compare tr.sel td { background: #e8eef5; }
+.ok { color: #1d6b45; }
+.no { color: #9b1c1c; }
+.span2 { grid-column: span 2; }
