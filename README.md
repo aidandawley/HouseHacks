@@ -9,6 +9,10 @@ with every number labeled as sourced, user-entered or `ASSUMPTION`.
 
 > Prototype for early-stage screening only — not legal, financial or lending advice.
 
+**▶ Demo video:** https://youtu.be/MY2K443PYzU
+
+[![HomeForge demo video](https://img.youtube.com/vi/MY2K443PYzU/hqdefault.jpg)](https://youtu.be/MY2K443PYzU)
+
 Default demo: **Habitat OC — 1921 W. Washington Ave., Santa Ana** — a real, publicly documented
 six-home (three-duplex) project. Create your own projects from the project bar; the demo stays read-only.
 
@@ -61,7 +65,7 @@ Honesty rules we follow on screen: documented vs. derived vs. assumption vs. unk
 | CalHome, HOME, SHOP, CalHFA | Candidate programs — unconfirmed; never counted in the gap |
 | Organizer synthetic one-home deal ($535K / $95K gap) | SYNTHETIC test fixture only |
 
-All cached sources with URLs, dates and limitations: [`backend/data/reference_sources.json`](backend/data/reference_sources.json).
+Full citation list: [`SOURCES.md`](SOURCES.md). All cached sources with URLs, dates and limitations: [`backend/data/reference_sources.json`](backend/data/reference_sources.json).
 The simplified `income × ratio` affordability model is **not** the HSC §50052.5 statutory formula.
 
 ## Official event references
