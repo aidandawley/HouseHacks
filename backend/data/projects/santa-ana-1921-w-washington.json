@@ -285,7 +285,8 @@
     "contingency_rate": 0.1,
     "financing_rate": 0.05,
     "illustrative_site_capacity": 6,
-    "additional_subsidy_budget": 900000
+    "additional_subsidy_budget": 900000,
+    "property_tax_carry": 30000
   },
   "funding_sources": [
     {
@@ -382,8 +383,83 @@
     "development.additional_subsidy_budget": {
       "kind": "assumption",
       "note": "How much additional funding you assume could be raised. A comparison line only — never subtracted from the gap."
+    },
+    "development.property_tax_carry": {
+      "kind": "assumption",
+      "note": "Placeholder: ~$15,000/yr × 2 years of holding. Not from assessor records; the parcel's actual tax status is UNKNOWN."
     }
   },
   "verified_facts": {},
-  "notes": "Site facts are DOCUMENTED from City of Santa Ana Resolutions 2024-10 and 2024-11 (adopted June 10, 2024). The city grant is shown at a MODELED allocation that you set ($0 by default) — never assume the full $2.2M ceiling was disbursed. No real gap for this project is known."
+  "notes": "Site facts are DOCUMENTED from City of Santa Ana Resolutions 2024-10 and 2024-11 (adopted June 10, 2024). The city grant is shown at a MODELED allocation that you set ($0 by default) — never assume the full $2.2M ceiling was disbursed. No real gap for this project is known.",
+  "screening_facts": {
+    "state": {
+      "value": "CA",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1
+    },
+    "county": {
+      "value": "Orange",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1
+    },
+    "city": {
+      "value": "Santa Ana",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1
+    },
+    "project_type": {
+      "value": "affordable_homeownership",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1,
+      "note": "Six for-sale units for lower-income households."
+    },
+    "construction_type": {
+      "value": "new_construction",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1,
+      "note": "Three new duplex buildings."
+    },
+    "developer_type": {
+      "value": "nonprofit",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 4,
+      "note": "“Habitat for Humanity of Orange County, is a non-profit housing developer.” Organizational clearance for the welfare exemption is UNKNOWN."
+    },
+    "property_owner": {
+      "value": "developer",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 1,
+      "note": "Habitat OC is listed as Applicant & Property Owner. Acquisition date UNKNOWN."
+    },
+    "recorded_affordability_agreement": {
+      "value": "unknown",
+      "status": "UNKNOWN",
+      "source_id": "sa-reso-2024-11",
+      "page": 2,
+      "note": "Reso 2024-11 requires a Density Bonus Agreement with affordability covenants (no less than 45 years) to be recorded before any grant disbursement. Whether it has been recorded, and whether its terms meet RTC §214.15.1, is UNKNOWN."
+    },
+    "first_time_low_income_homebuyers": {
+      "value": "intended_unverified",
+      "status": "UNKNOWN",
+      "note": "Homes are for lower-income households (<80% AMI). A first-time-homebuyer restriction is not documented."
+    },
+    "property_acquired_date": {
+      "value": "unknown",
+      "status": "UNKNOWN"
+    },
+    "density_bonus_used": {
+      "value": "true",
+      "status": "DOCUMENTED",
+      "source_id": "sa-reso-2024-10",
+      "page": 5,
+      "note": "“Three additional units are allowed by the density bonus provisions in the California Density Bonus Law for a 100-percent affordability rate for six lower income units.”"
+    }
+  }
 }

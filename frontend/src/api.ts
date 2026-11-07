@@ -1,4 +1,13 @@
-import type { CompareRequest, CompareResponse, InputProvenance, Project, ProjectSummary } from "./types";
+import type {
+  AdvisorResult,
+  CompareRequest,
+  CompareResponse,
+  IncentiveCard,
+  InputProvenance,
+  Project,
+  ProjectSummary,
+  Simulation,
+} from "./types";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:8000";
 
@@ -54,3 +63,36 @@ export const deleteProject = (id: string) =>
 
 export const postCompare = (req: CompareRequest, signal?: AbortSignal) =>
   request<CompareResponse>("/api/compare", { method: "POST", body: JSON.stringify(req), signal });
+
+// ---------------------------------------------------------------- Funding & Incentive Advisor
+
+export const screenIncentives = (project_id: string, inputs: CompareRequest) =>
+  request<{ candidates: IncentiveCard[]; disclaimer: string }>("/api/incentives/screen", {
+    method: "POST",
+    body: JSON.stringify({ project_id, inputs }),
+  });
+
+export const simulateIncentive = (project_id: string, inputs: CompareRequest, program_id: string, amount: number | null) =>
+  request<Simulation>("/api/incentives/simulate", {
+    method: "POST",
+    body: JSON.stringify({ project_id, inputs, program_id, amount }),
+  });
+
+/** The only mutation path for advisor what-ifs — called from an explicit user click. */
+export const applyProposal = (proposal_id: string, inputs: CompareRequest) =>
+  request<{ inputs: CompareRequest; scenario_version: string }>("/api/scenarios/apply-proposal", {
+    method: "POST",
+    body: JSON.stringify({ proposal_id, inputs, user_confirmed: true }),
+  });
+
+export const askAdvisor = (
+  project_id: string,
+  inputs: CompareRequest,
+  selected_homes: number | null,
+  message: string,
+  history: { role: "user" | "assistant"; content: string }[],
+) =>
+  request<AdvisorResult>("/api/agent/chat", {
+    method: "POST",
+    body: JSON.stringify({ project_id, inputs, selected_homes, message, history }),
+  });

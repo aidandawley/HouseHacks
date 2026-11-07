@@ -46,6 +46,14 @@ const ADVANCED: FieldSpec[] = [
     max: 100,
     hint: "Coarse carrying-cost allowance, not an APR or loan model.",
   },
+  {
+    key: "property_tax_carry",
+    label: "Property taxes while held",
+    prefix: "$",
+    step: 1000,
+    min: 0,
+    hint: "Total property tax paid while the nonprofit holds and builds (all homes). A possible exemption can only reduce this line — the Funding Advisor refuses savings if it is $0.",
+  },
   { key: "illustrative_site_capacity", label: "Max homes on this site", suffix: "homes", step: 1, min: 0 },
   {
     key: "additional_subsidy_budget",
@@ -73,7 +81,7 @@ export function DevelopmentControls({ section, value, provenance, onChange }: Pr
       <Field
         key={f.key}
         label={f.label}
-        value={+(value[f.key] * scale).toFixed(6)}
+        value={+((value[f.key] ?? 0) * scale).toFixed(6)}
         onChange={(raw) => {
           const n = Number(raw);
           if (raw === "" || !Number.isFinite(n)) return;

@@ -2,7 +2,12 @@
 
 export type FundingStatus = "committed" | "conditional" | "potential";
 export type FundingInstrument = "development_grant" | "donation" | "repayable_loan" | "buyer_assistance";
-export type FundingBasis = "illustrative_assumption" | "user_entered" | "reference_only" | "verified_public_source";
+export type FundingBasis =
+  | "illustrative_assumption"
+  | "user_entered"
+  | "reference_only"
+  | "verified_public_source"
+  | "hypothetical_whatif";
 
 export interface SourceMetadata {
   title: string;
@@ -33,6 +38,17 @@ export interface DevelopmentInputs {
   financing_rate: number;
   illustrative_site_capacity: number;
   additional_subsidy_budget: number;
+  property_tax_carry?: number;
+}
+
+/** An applied advisor what-if that reduces a modeled cost line. Always hypothetical. */
+export interface CostReduction {
+  id: string;
+  program_id: string;
+  line: "property_tax_carry";
+  amount: number;
+  status: "hypothetical";
+  label: string;
 }
 
 export interface FundingSource {
@@ -139,6 +155,7 @@ export interface Project {
   candidate_home_counts: number[];
   default_home_count?: number | null;
   documented_home_count?: number | null;
+  cost_reductions?: CostReduction[];
   scenario_labels: Record<string, string>;
   household: HouseholdInputs;
   development: DevelopmentInputs;
@@ -158,6 +175,7 @@ export interface CompareRequest {
   /** Real documented site: analysis centers on this approved count; others are what-ifs. */
   documented_home_count?: number | null;
   gift_amount?: number | null;
+  cost_reductions?: CostReduction[];
 }
 
 export interface AffordabilityResult {
@@ -189,6 +207,7 @@ export interface FundingSummary {
 }
 
 export interface PerHome {
+  property_tax: number;
   land: number;
   site_work: number;
   hard: number;
@@ -220,6 +239,8 @@ export interface ScenarioResult {
   soft_cost: number;
   contingency: number;
   financing_cost: number;
+  property_tax_carry: number;
+  property_tax_reduction: number;
   total_development_cost: number;
   sale_price_per_home: number;
   sale_proceeds: number;
@@ -259,3 +280,66 @@ export type Provenance =
   | "published_income_limit"
   | "candidate"
   | "computed";
+
+// ---------------------------------------------------------------- Funding & Incentive Advisor
+
+export type MatchStatus = "potential_match" | "needs_information" | "appears_incompatible" | "unavailable_or_closed" | "unsupported";
+
+export interface IncentiveCard {
+  program_id: string;
+  name: string;
+  match_status: MatchStatus;
+  status_label: string;
+  how_it_works: string;
+  category: string;
+  financial_effect_type: string;
+  complexity: string;
+  matches: string[];
+  conflicts: string[];
+  missing_information: string[];
+  availability: string;
+  availability_note: string;
+  source_title: string;
+  source_url: string | null;
+  source_checked_on: string;
+  source_verification: string;
+  simulation: string;
+  can_simulate: boolean;
+  simulate_note: string | null;
+  suggested_amount: number | null;
+}
+
+export interface ScenarioDelta {
+  homes: number;
+  baseline_tdc: number;
+  hypothetical_tdc: number;
+  baseline_gap: number;
+  hypothetical_gap: number;
+  gap_change: number;
+}
+
+export interface Simulation {
+  program_id: string;
+  program_name: string;
+  kind: string;
+  ok: boolean;
+  message: string;
+  amount: number | null;
+  proposal_id: string | null;
+  scenario_version: string;
+  change_description: string | null;
+  deltas: ScenarioDelta[];
+  status_label: string;
+  disclaimer: string;
+}
+
+export interface AdvisorResult {
+  summary: string;
+  used_claude: boolean;
+  model: string | null;
+  error: string | null;
+  candidates: IncentiveCard[];
+  simulations: Simulation[];
+  tool_trace: string[];
+  disclaimer: string;
+}

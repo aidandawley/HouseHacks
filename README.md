@@ -17,7 +17,7 @@ case study: [`HomeForge_Santa_Ana_Case_Study.md`](HomeForge_Santa_Ana_Case_Study
 
 ## Try it
 
-Requires Python 3.11+ and Node 20+. **No API keys needed.**
+Requires Python 3.11+ and Node 20+. **No API key needed for the core app.** The optional AI Funding Advisor uses Claude: copy `.env.example` to `.env` and set `ANTHROPIC_API_KEY`. Without a key, the advisor falls back to the backend's rule-based screen.
 
 ```bash
 # Backend (repo root)
@@ -37,11 +37,12 @@ Tests: `python -m pytest backend/tests -q` and `npm --prefix frontend run build`
 All dollar figures are **modeled from labeled assumptions**, not Habitat's budget. No API key or internet needed.
 
 1. **Open the app.** "Santa Ana — 1921 W. Washington Ave." loads: a real Habitat OC project, 6 homes in 3 duplexes. The chips show the **documented** facts (APN 405-101-37, city grant agreement up to $2.2M) with a link to the city resolution.
-2. **Read the headline strip:** cost to build − what families pay − counted funding = **still to raise ≈ $3.15M ($524K/home)**. The city grant is modeled at **$0**, because how much has been disbursed is unknown.
-3. **3D "Who pays for each home":** each house is filled green (families pay) and red (still to raise). Drag the **city grant slider** under the scene toward $2.2M. Blue (counted grants) grows, red shrinks, and the gap falls to **≈ $946K ($158K/home)** if fully paid.
+2. **Read the headline strip:** cost to build − what families pay − counted funding = **still to raise ≈ $3.18M ($529K/home)**. The city grant is modeled at **$0**, because how much has been disbursed is unknown.
+3. **3D "Who pays for each home":** each house is filled green (families pay) and red (still to raise). Drag the **city grant slider** in Project settings toward $2.2M. Blue (counted grants) grows, red shrinks, and the gap falls to **≈ $976K ($163K/home)** if fully paid.
 4. **Rates:** click the Freddie Mac **7.40% (week of 2026-10-08)** button, then **7.18% (latest)**. The headline shows the change vs. baseline (≈ $42K on the 6-home gap). The published rate *fell* last month.
-5. **Donor question (organizer scenario M03):** in "What does a gift do?", **$25,000 ≈ 4.8% of one home's remaining gap**, roughly one home's site work. About 21 such gifts close one home's gap at the $0-grant baseline.
-6. **Next 100 projects:** **+ New project** → name, city and home counts → a full model in seconds. Every input starts as a labeled ASSUMPTION until you replace it.
+5. **Donor question (organizer scenario M03):** in "What does a gift do?", **$25,000 ≈ 4.7% of one home's remaining gap**, roughly one home's site work. About 22 such gifts close one home's gap at the $0-grant baseline.
+6. **AI Funding Advisor** (top bar): ask "Find property-tax relief for this site." Claude reads the scenario through read-only backend tools and returns source-backed leads. It finds California's nonprofit homeownership welfare exemption (RTC §214.15.1, BOE LTA 2023/044, checked 2026-11-07) and flags what's missing (recorded 45-year agreement, first-time buyers) plus a modeled conflict (33% vs the statute's 30% affordable-cost cap). **Simulate impact** → the backend removes up to the $30K *assumed* property-tax line → **Apply as hypothetical** → the KPI cards, funding tab and 3D update, with a yellow "Hypothetical branch" banner and Undo. Nothing changes until you click Apply, and nothing is ever called approved.
+7. **Next 100 projects:** **+ New project** → name, city and home counts → a full model in seconds. Every input starts as a labeled ASSUMPTION until you replace it.
 
 Honesty rules we follow on screen: documented vs. derived vs. assumption vs. unknown labels everywhere; the conditional grant is never assumed disbursed; candidate programs, loans and buyer assistance never reduce the gap; 4 and 8 homes are labeled unapproved what-ifs.
 

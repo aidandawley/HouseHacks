@@ -8,6 +8,7 @@ import {
   postCompare,
   updateProject,
 } from "./api";
+import { AdvisorPanel } from "./components/AdvisorPanel";
 import { DevelopmentControls } from "./components/DevelopmentControls";
 import { FundingStack } from "./components/FundingStack";
 import { GiftExplainer } from "./components/GiftExplainer";
@@ -44,7 +45,17 @@ function toRequest(p: Project): CompareRequest {
     development: p.development,
     funding_sources: p.funding_sources,
     documented_home_count: p.documented_home_count ?? null,
+    cost_reductions: p.cost_reductions ?? [],
   });
+}
+
+/** Remove every advisor what-if (hypothetical tax reductions and hypothetical awards), keeping other edits. */
+function withoutWhatIfs(r: CompareRequest): CompareRequest {
+  return {
+    ...r,
+    cost_reductions: [],
+    funding_sources: r.funding_sources.filter((f) => f.basis !== "hypothetical_whatif"),
+  };
 }
 
 const defaultCount = (p: Project) => p.default_home_count ?? p.candidate_home_counts[0];
@@ -68,6 +79,8 @@ export default function App() {
   const [dialog, setDialog] = useState<"blank" | "copy" | null>(null);
   const [tab, setTab] = useState<Tab>("funding");
   const [advisorOpen, setAdvisorOpen] = useState(false);
+  // Undo stack for applied advisor what-ifs (each entry = inputs before an apply).
+  const [whatIfUndo, setWhatIfUndo] = useState<CompareRequest[]>([]);
 
   // Last successful (labeled) result is kept on error, but marked stale.
   const [analysis, setAnalysis] = useState<CompareResponse | null>(null);
@@ -85,6 +98,7 @@ export default function App() {
     setProv(structuredClone(p.input_provenance));
     setSelectedHomes(defaultCount(p));
     setBaseline(null);
+    setWhatIfUndo([]);
     needBaseline.current = true;
   }, []);
 
@@ -279,6 +293,17 @@ export default function App() {
   };
 
   const grantRows = inputs?.funding_sources.filter((r) => r.documented_max != null) ?? [];
+  const whatIfLabels = [
+    ...(inputs?.cost_reductions ?? []).map((r) => `${r.label} (−${fmtUsd0(r.amount)} property tax)`),
+    ...(inputs?.funding_sources ?? []).filter((f) => f.basis === "hypothetical_whatif").map((f) => `${f.name} (${fmtUsd0(f.amount ?? 0)})`),
+  ];
+  const onAdvisorApplied = (next: CompareRequest) => {
+    if (!inputs) return;
+    setWhatIfUndo((u) => [...u, inputs]);
+    const { gift_amount: _ignored, ...rest } = next;
+    void _ignored;
+    setInputs({ ...rest, documented_home_count: inputs.documented_home_count ?? null });
+  };
   const unitsFact = fact("units");
   const buildingsFact = fact("buildings");
   const grantFact = fact("city_grant_max");
@@ -325,6 +350,33 @@ export default function App() {
         <div className="banner error">
           Analysis failed: {analysisError}
           {analysis && " — figures shown are from the last successful run and do not reflect your latest edits."}
+        </div>
+      )}
+
+      {whatIfLabels.length > 0 && inputs && (
+        <div className="banner whatif">
+          <strong>Hypothetical branch</strong> — not approved, awarded or verified:{" "}
+          {whatIfLabels.join(" · ")}
+          <span className="spacer" />
+          <button
+            type="button"
+            onClick={() => {
+              const prev = whatIfUndo[whatIfUndo.length - 1];
+              setWhatIfUndo((u) => u.slice(0, -1));
+              setInputs(prev ?? withoutWhatIfs(inputs));
+            }}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setWhatIfUndo([]);
+              setInputs(withoutWhatIfs(inputs));
+            }}
+          >
+            Reset to baseline
+          </button>
         </div>
       )}
 
@@ -561,11 +613,25 @@ export default function App() {
             ✕
           </button>
         </div>
-        <p className="small">
-          Planned: reads the active scenario and suggests <strong>sourced</strong> funding opportunities, each with a “Simulate
-          impact” action that adds it to the stack as an unconfirmed what-if.
-        </p>
-        <p className="small muted">Not implemented in this prototype. All numbers on screen come from the deterministic backend.</p>
+        {project && inputs ? (
+          <AdvisorPanel
+            projectId={project.id}
+            contextLine={[
+              project.location ?? project.name,
+              selectedHomes !== null &&
+                `${selectedHomes} ${documented !== null && selectedHomes === documented ? "planned" : "modeled"} homes`,
+              "Homeownership",
+              "Illustrative finances",
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+            inputs={inputs}
+            selectedHomes={selectedHomes}
+            onApplied={onAdvisorApplied}
+          />
+        ) : (
+          <p className="muted">Loading…</p>
+        )}
       </aside>
 
       {dialog && (

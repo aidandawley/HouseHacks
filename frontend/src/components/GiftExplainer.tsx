@@ -17,6 +17,7 @@ const COST_LINES: { key: keyof ScenarioResult["per_home"]; label: string; color:
   { key: "soft", label: "Design, permits & fees", color: "#b8a1d9" },
   { key: "contingency", label: "Cushion for surprises", color: "#e0b866" },
   { key: "financing", label: "Interest & holding", color: "#d9a3a3" },
+  { key: "property_tax", label: "Property taxes", color: "#9fb3c8" },
 ];
 
 /**

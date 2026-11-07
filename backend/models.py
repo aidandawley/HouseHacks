@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, PlainSerializer, field_validator, model_validator
 
@@ -41,6 +41,7 @@ class FundingBasis(str, Enum):
     user_entered = "user_entered"
     reference_only = "reference_only"
     verified_public_source = "verified_public_source"
+    hypothetical_whatif = "hypothetical_whatif"  # added by an applied advisor what-if; never real
 
 
 # ---------------------------------------------------------------- inputs
@@ -77,6 +78,20 @@ class DevelopmentInputs(_Strict):
     financing_rate: Money = Field(ge=0, le=1)
     illustrative_site_capacity: int = Field(ge=0)
     additional_subsidy_budget: Money = Field(ge=0)
+    # Property taxes paid while the nonprofit holds/builds (ASSUMPTION). A separate line so a
+    # possible tax exemption can only ever remove a cost the model actually contains.
+    property_tax_carry: Money = Field(default=Decimal(0), ge=0)
+
+
+class CostReduction(_Strict):
+    """A HYPOTHETICAL reduction of a modeled cost line (e.g. a possible property-tax exemption)."""
+
+    id: str = Field(min_length=1)
+    program_id: str = Field(min_length=1)
+    line: Literal["property_tax_carry"]
+    amount: Money = Field(ge=0)
+    status: Literal["hypothetical"] = "hypothetical"
+    label: str = Field(min_length=1)
 
 
 class FundingSource(_Strict):
@@ -116,6 +131,20 @@ class CompareRequest(_Strict):
     documented_home_count: Optional[int] = None
     # Organizer scenario M03: a hypothetical gift to explain (not added to the funding stack).
     gift_amount: Optional[Money] = Field(default=None, ge=0, le=100_000_000)
+    # Applied advisor what-ifs that reduce modeled cost lines (never applied automatically).
+    cost_reductions: list[CostReduction] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _reductions_within_lines(self) -> "CompareRequest":
+        total = sum((r.amount for r in self.cost_reductions if r.line == "property_tax_carry"), Decimal(0))
+        if total > self.development.property_tax_carry:
+            raise ValueError(
+                "cost reductions exceed the modeled property-tax line — a saving cannot remove more than the cost it reduces"
+            )
+        ids = [r.id for r in self.cost_reductions]
+        if len(set(ids)) != len(ids):
+            raise ValueError("cost_reductions ids must be unique")
+        return self
 
     @model_validator(mode="after")
     def _documented_is_candidate(self) -> "CompareRequest":
@@ -196,6 +225,16 @@ class InputProvenance(_Strict):
     note: Optional[str] = None
 
 
+class ScreeningFact(_Strict):
+    """A project fact used by the incentive screen. `value` "unknown" is never inferred into true."""
+
+    value: str
+    status: FactStatus
+    source_id: Optional[str] = None
+    page: Optional[int] = None
+    note: Optional[str] = None
+
+
 class Project(_Strict):
     id: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
     name: str = Field(min_length=1, max_length=120)
@@ -215,6 +254,8 @@ class Project(_Strict):
     household: HouseholdInputs
     development: DevelopmentInputs
     funding_sources: list[FundingSource] = Field(default_factory=list)
+    cost_reductions: list[CostReduction] = Field(default_factory=list)
+    screening_facts: dict[str, ScreeningFact] = Field(default_factory=dict)
     input_provenance: dict[str, InputProvenance] = Field(default_factory=dict)
     verified_facts: dict = Field(default_factory=dict)
     notes: Optional[str] = None
@@ -239,4 +280,5 @@ class Project(_Strict):
             development=self.development,
             funding_sources=self.funding_sources,
             documented_home_count=self.documented_home_count,
+            cost_reductions=self.cost_reductions,
         )

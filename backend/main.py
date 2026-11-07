@@ -9,13 +9,24 @@ every candidate scenario and the deterministic recommendation.
 
 from __future__ import annotations
 
-from typing import Optional
+import os
+from pathlib import Path
+from typing import Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+try:  # load ANTHROPIC_API_KEY etc. from the repo-root .env (gitignored); real env vars win
+    from dotenv import load_dotenv
+
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env", override=False)
+except ImportError:  # optional dependency
+    pass
+
+from . import incentives
 from . import projects as store
+from .advisor import run_advisor
 from .models import CompareRequest, InputProvenance, Project
 from .optimize import compare as run_comparison
 from .provenance import UI_LABELS, load_reference_sources
@@ -135,3 +146,92 @@ def compare(request: CompareRequest) -> dict:
     body = result.model_dump(mode="json", exclude={"affordability": {"warning"}})
     body["candidate_home_counts"] = request.candidate_home_counts
     return body
+
+
+# ---------------------------------------------------------------- funding & incentive advisor (P1)
+# All of these run without Claude except /api/agent/chat, which falls back gracefully.
+
+
+class ScenarioContext(BaseModel):
+    project_id: str
+    inputs: CompareRequest
+
+
+class CheckRequest(ScenarioContext):
+    program_id: str
+
+
+class SimulateRequest(ScenarioContext):
+    program_id: str
+    amount: Optional[float] = Field(default=None, ge=0, le=100_000_000)
+
+
+class ApplyRequest(BaseModel):
+    proposal_id: str
+    inputs: CompareRequest
+    user_confirmed: bool
+
+
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=8000)
+
+
+class ChatRequest(ScenarioContext):
+    message: str = Field(min_length=1, max_length=2000)
+    selected_homes: Optional[int] = None
+    history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+
+
+def _program_or_404(program_id: str) -> incentives.Program:
+    try:
+        return incentives.get_program(program_id)
+    except KeyError:
+        raise HTTPException(404, f"Unknown program {program_id!r}")
+
+
+@app.get("/api/incentives/catalog")
+def incentive_catalog() -> dict:
+    return {"programs": [p.model_dump() for p in incentives.load_catalog()], "disclaimer": incentives.DISCLAIMER}
+
+
+@app.post("/api/incentives/screen")
+def incentive_screen(req: ScenarioContext) -> dict:
+    project = _get_or_404(req.project_id)
+    return {"candidates": [c.model_dump() for c in incentives.screen_all(project, req.inputs)], "disclaimer": incentives.DISCLAIMER}
+
+
+@app.post("/api/incentives/check")
+def incentive_check(req: CheckRequest) -> dict:
+    project = _get_or_404(req.project_id)
+    return incentives.screen(_program_or_404(req.program_id), project, req.inputs).model_dump()
+
+
+@app.post("/api/incentives/simulate")
+def incentive_simulate(req: SimulateRequest) -> dict:
+    """Non-mutating: runs the engine on a copy and returns a single-use proposal id."""
+    project = _get_or_404(req.project_id)
+    _program_or_404(req.program_id)
+    return incentives.simulate(project, req.inputs, req.program_id, req.amount).model_dump(mode="json")
+
+
+@app.post("/api/scenarios/apply-proposal")
+def apply_proposal(req: ApplyRequest) -> dict:
+    """The ONLY mutation path for advisor what-ifs; called by the UI's explicit confirm button."""
+    try:
+        patched = incentives.apply_proposal(req.proposal_id, req.inputs, req.user_confirmed)
+    except incentives.ProposalError as e:
+        raise HTTPException(e.status, str(e))
+    return {"inputs": patched.model_dump(mode="json"), "scenario_version": incentives.scenario_version(patched)}
+
+
+@app.post("/api/agent/chat")
+def agent_chat(req: ChatRequest) -> dict:
+    project = _get_or_404(req.project_id)
+    result = run_advisor(project, req.inputs, req.selected_homes, req.message, [t.model_dump() for t in req.history])
+    return result.model_dump(mode="json")
+
+
+@app.get("/api/agent/status")
+def agent_status() -> dict:
+    return {"claude_configured": bool(os.environ.get("ANTHROPIC_API_KEY")), "model": os.environ.get("ANTHROPIC_MODEL", "claude-opus-5-5")}

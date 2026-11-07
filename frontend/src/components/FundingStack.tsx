@@ -59,6 +59,7 @@ export function FundingStack({ rows, summary, stale, onChange }: Props) {
           {rows.map((r) => {
             const res = result.get(r.id);
             const isCandidate = r.basis === "reference_only";
+            const isWhatIf = r.basis === "hypothetical_whatif";
             const max = r.documented_max ?? undefined;
             const hasCeiling = max !== undefined && max !== null;
             return (
@@ -71,7 +72,11 @@ export function FundingStack({ rows, summary, stale, onChange }: Props) {
                   )}
                   <div className="small muted">
                     {INSTRUMENT[r.instrument]} ·{" "}
-                    {isCandidate ? (
+                    {isWhatIf ? (
+                      <span className="tag illustrative" title="Added by an applied advisor what-if. Not awarded.">
+                        HYPOTHETICAL — not awarded
+                      </span>
+                    ) : isCandidate ? (
                       <ProvenanceTag kind="candidate" />
                     ) : hasCeiling ? (
                       <span
@@ -94,7 +99,9 @@ export function FundingStack({ rows, summary, stale, onChange }: Props) {
                   )}
                 </td>
                 <td>
-                  {isCandidate ? (
+                  {isWhatIf ? (
+                    <span className="muted small">advisor what-if</span>
+                  ) : isCandidate ? (
                     <span className="muted small">potential — unconfirmed</span>
                   ) : (
                     <select value={r.status} onChange={(e) => update(r.id, { status: e.target.value as FundingStatus })}>
@@ -113,7 +120,13 @@ export function FundingStack({ rows, summary, stale, onChange }: Props) {
                   )}
                 </td>
                 <td>
-                  {isCandidate ? (
+                  {isWhatIf ? (
+                    <span className="small">
+                      <strong>{fmtUsd0(r.amount ?? 0)}</strong>
+                      <br />
+                      <span className="muted">undo or reset from the what-if banner</span>
+                    </span>
+                  ) : isCandidate ? (
                     <span className="muted small">unknown — not modeled</span>
                   ) : hasCeiling ? (
                     <span className="small">

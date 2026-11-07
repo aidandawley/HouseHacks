@@ -1,0 +1,265 @@
+{
+  "about": "Curated, cached incentive/financing catalog for the HomeForge Funding Advisor. Screening rules are hints, not full statutory criteria; nothing here is an eligibility, tax, or award determination. verification: team_verified = team read the source on checked_on; spec_reference = from the team's agent spec, primary page not re-read; team_research_unverified = from the team's research table, no primary source linked yet.",
+  "checked_on": "2026-11-07",
+  "programs": [
+    {
+      "id": "CA_RTC_214_15_1",
+      "name": "Nonprofit homeownership welfare exemption (RTC §214.15.1)",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "cost_reduction",
+      "financial_mechanism": "eligible_property_tax_avoided",
+      "simulation": "tax_cost_reduction",
+      "exclusive_group": "ca_welfare_exemption_homeownership",
+      "complexity": "High",
+      "how_it_works": "May exempt property owned by a qualifying nonprofit that builds or rehabilitates homes for sale to low-income first-time buyers from property tax — a possible reduction of an expense, not a cash grant or a transferable credit.",
+      "availability": "statutory_provision_subject_to_conditions",
+      "availability_note": "BOE LTA 2023/044: operative for lien date January 1, 2023 through lien date January 1, 2027. As of the check date, only the 2027-01-01 lien date remains. (The team spec's 'before 2028' date is a separate construction deadline in the same letter.)",
+      "eligibility_rules": [
+        {"fact": "developer_type", "operator": "equals", "value": "nonprofit", "label": "Owner is a nonprofit corporation"},
+        {"fact": "recorded_affordability_agreement", "operator": "verified_true", "label": "45-year recorded agreement with the local agency meeting §214.15.1(a) terms"},
+        {"fact": "first_time_low_income_homebuyers", "operator": "verified_true", "label": "Units sold only to first-time homebuyers that are low-income families"},
+        {"input": "household.housing_cost_ratio", "operator": "lte", "value": 0.30, "label": "Affordable housing cost ≤ 30% of gross income", "conflict_note": "The model assumes {value:pct} of income for housing; §214.15.1(d)(2) defines affordable housing cost as not exceeding 30% of gross income."},
+        {"unknown": "down_payment_vs_market_value", "label": "Initial down payment ≤ 5% of the unit's market value (market value unknown)"}
+      ],
+      "requirements_not_automated": [
+        "Nonprofit organizational clearance for the welfare exemption",
+        "Recorded agreement terms (45 years, first-time low-income buyers, ≤5% down payment, affordable housing cost)",
+        "Officer affidavit to the County Assessor and construction-timing conditions",
+        "Qualifying lien dates and proration by the County Assessor",
+        "County Assessor determination"
+      ],
+      "financial_inputs_needed": ["property_tax_carry", "eligible_amount"],
+      "source": {
+        "title": "BOE Letter to Assessors No. 2023/044 — Welfare exemption: low-income housing (RTC §214.15.1)",
+        "url": "https://www.boe.ca.gov/proptaxes/pdf/lta23044.pdf",
+        "checked_on": "2026-11-07",
+        "verification": "team_verified"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_RTC_214_15",
+      "name": "Nonprofit homeownership welfare exemption — zero-interest loan sales (RTC §214.15)",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "cost_reduction",
+      "financial_mechanism": "eligible_property_tax_avoided",
+      "simulation": "tax_cost_reduction",
+      "exclusive_group": "ca_welfare_exemption_homeownership",
+      "complexity": "High",
+      "how_it_works": "Since 1999, may exempt nonprofit-owned property used to build or rehabilitate homes sold to low-income buyers when the sale is financed with a zero-interest loan. Cannot be stacked with §214.15.1 for the same tax expense.",
+      "availability": "statutory_provision_subject_to_conditions",
+      "availability_note": "Described in BOE LTA 2023/044 as in effect since October 10, 1999.",
+      "eligibility_rules": [
+        {"fact": "developer_type", "operator": "equals", "value": "nonprofit", "label": "Owner is a nonprofit corporation"},
+        {"input": "household.annual_mortgage_rate", "operator": "equals", "value": 0, "label": "Buyer's purchase financed with a zero-interest loan", "conflict_note": "The model finances buyers at a {value:pct} mortgage rate; §214.15 requires a zero-interest-rate loan."}
+      ],
+      "requirements_not_automated": [
+        "Nonprofit organizational clearance for the welfare exemption",
+        "Zero-interest buyer financing structure",
+        "County Assessor determination"
+      ],
+      "financial_inputs_needed": ["property_tax_carry", "eligible_amount"],
+      "source": {
+        "title": "BOE Letter to Assessors No. 2023/044 (describes RTC §214.15 and §214.15.1)",
+        "url": "https://www.boe.ca.gov/proptaxes/pdf/lta23044.pdf",
+        "checked_on": "2026-11-07",
+        "verification": "team_verified"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_CALHOME",
+      "name": "HCD CalHome Program",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "grant_or_loan",
+      "financial_mechanism": "program_financing_terms_vary",
+      "simulation": "grant",
+      "complexity": "High",
+      "how_it_works": "State homeownership program for local agencies and nonprofits (development and buyer assistance). Assistance may be a grant, a forgivable development loan or a deferred buyer loan depending on activity — each has different effects on the gap.",
+      "availability": "application_closed_on_checked_page",
+      "availability_note": "The HCD CalHome page showed “Application window CLOSED — No longer accepting applications” when checked on 2026-11-07. Recheck before planning on it.",
+      "eligibility_rules": [
+        {"fact": "developer_type", "operator": "in", "value": ["nonprofit", "local_agency"], "label": "Applicant is a nonprofit or local agency"}
+      ],
+      "requirements_not_automated": ["An open NOFA / application round", "Eligible activity and cost restrictions", "Award amount and loan vs grant terms", "Subsidy-layering compatibility with the city grant"],
+      "financial_inputs_needed": ["award_amount"],
+      "source": {
+        "title": "HCD — CalHome Program",
+        "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome",
+        "checked_on": "2026-11-07",
+        "verification": "team_verified"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_CALHFA_MYHOME",
+      "name": "CalHFA MyHome Assistance",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "buyer_assistance",
+      "financial_mechanism": "buyer_deferred_junior_loan",
+      "simulation": "buyer_side",
+      "complexity": "Medium",
+      "how_it_works": "Deferred-payment junior loan for down payment/closing costs through participating lenders. It helps the buyer, not the developer: it is not a developer grant and is never subtracted from the development gap.",
+      "availability": "buyer_eligibility_unknown",
+      "availability_note": "Organizers' source list read the program page as up to 3.5% (FHA) / 3% (conventional). Terms and buyer eligibility not re-checked by the team.",
+      "eligibility_rules": [
+        {"fact": "first_time_low_income_homebuyers", "operator": "verified_true", "label": "Buyer and first-mortgage eligibility (not modeled)"}
+      ],
+      "requirements_not_automated": ["Buyer income and first-time status", "Participating lender and first-mortgage compatibility", "Compatibility with the project's resale restrictions"],
+      "financial_inputs_needed": [],
+      "source": {
+        "title": "CalHFA homebuyer programs",
+        "url": "https://www.calhfa.ca.gov/homebuyer/programs/",
+        "checked_on": "2026-11-06",
+        "verification": "spec_reference"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "HUD_HOME",
+      "name": "HOME Investment Partnerships Program",
+      "jurisdiction": ["US", "CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "grant_or_loan",
+      "financial_mechanism": "program_financing_terms_vary",
+      "simulation": "grant",
+      "complexity": "Very high",
+      "how_it_works": "Federal funds administered by states and participating jurisdictions for affordable housing, including homeownership development or buyer assistance. Uses the separate State HOME income-limit table.",
+      "availability": "requires_program_review",
+      "availability_note": "Availability through the City of Santa Ana or HCD not checked.",
+      "eligibility_rules": [
+        {"fact": "project_type", "operator": "equals", "value": "affordable_homeownership", "label": "Homeownership activity"}
+      ],
+      "requirements_not_automated": ["Participating jurisdiction allocation and open round", "HOME income limits (State HOME table) and affordability period", "Federal cross-cutting requirements"],
+      "financial_inputs_needed": ["award_amount"],
+      "source": {
+        "title": "HUD Exchange — HOME Investment Partnerships Program",
+        "url": "https://www.hudexchange.info/programs/home/",
+        "checked_on": "2026-11-06",
+        "verification": "spec_reference"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "HUD_SHOP",
+      "name": "Self-Help Homeownership Opportunity Program (SHOP)",
+      "jurisdiction": ["US"],
+      "project_types": ["affordable_homeownership"],
+      "category": "restricted_grant",
+      "financial_mechanism": "restricted_land_infrastructure_funds",
+      "simulation": "restricted_grant",
+      "restricted_to_lines": ["land_cost", "site_work_cost"],
+      "complexity": "High",
+      "how_it_works": "HUD funds for sweat-equity / volunteer-based homeownership, notably land acquisition and infrastructure — restricted capital, not an unrestricted development grant. A simulation is capped at modeled land + site work.",
+      "availability": "requires_program_review",
+      "availability_note": "Funds flow through national SHOP grantees; access for this project not checked.",
+      "eligibility_rules": [
+        {"fact": "developer_type", "operator": "equals", "value": "nonprofit", "label": "Nonprofit sweat-equity builder"},
+        {"unknown": "sweat_equity_model", "label": "Homebuyer sweat-equity requirement"}
+      ],
+      "requirements_not_automated": ["Affiliation with a national SHOP grantee", "Sweat-equity requirements", "Eligible uses (land/infrastructure) and per-unit limits"],
+      "financial_inputs_needed": ["award_amount"],
+      "source": {
+        "title": "HUD Exchange — SHOP",
+        "url": "https://www.hudexchange.info/programs/shop/",
+        "checked_on": "2026-11-06",
+        "verification": "spec_reference"
+      },
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_SB_937_FEE_DEFERRAL",
+      "name": "SB 937 / local impact-fee deferral",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "timing",
+      "financial_mechanism": "fee_payment_timing",
+      "simulation": "timing_only",
+      "complexity": "Medium",
+      "how_it_works": "Delays when certain development fees are paid, reducing upfront cash needs. A deferral changes timing, not the fee amount — it does not reduce the permanent funding gap.",
+      "availability": "not_verified_do_not_recommend_as_available",
+      "availability_note": "From the team's research table; no primary source linked yet. Check Santa Ana's current written fee rules before relying on it.",
+      "eligibility_rules": [],
+      "requirements_not_automated": ["The city's current written fee-deferral rule for this project", "Which fees are deferrable and until when"],
+      "financial_inputs_needed": ["deferred_amount"],
+      "source": {"title": "Team research table (2026-11-07) — primary source not yet linked", "url": null, "checked_on": "2026-11-07", "verification": "team_research_unverified"},
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_LOCAL_IMPACT_FEE_WAIVER",
+      "name": "Local impact-fee waiver",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "cost_reduction",
+      "financial_mechanism": "fee_reduction_if_waived",
+      "simulation": "none",
+      "complexity": "Medium",
+      "how_it_works": "A city may waive or reduce eligible development fees for affordable homes — a real cost reduction only if a written waiver applies. HomeForge does not model fees as a separate line, so no savings are simulated.",
+      "availability": "not_verified_do_not_recommend_as_available",
+      "availability_note": "From the team's research table; Santa Ana's waiver rules not checked.",
+      "eligibility_rules": [],
+      "requirements_not_automated": ["The city's written waiver rule and eligible fees", "A fee line in the budget to reduce"],
+      "financial_inputs_needed": [],
+      "source": {"title": "Team research table (2026-11-07) — primary source not yet linked", "url": null, "checked_on": "2026-11-07", "verification": "team_research_unverified"},
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_STATE_DENSITY_BONUS",
+      "name": "State Density Bonus Law",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "regulatory",
+      "financial_mechanism": "more_homes_or_concessions",
+      "simulation": "none",
+      "complexity": "Medium–high",
+      "how_it_works": "More homes per parcel, reduced parking and development-standard concessions. A regulatory benefit, not funding.",
+      "availability": "already_used_by_project",
+      "availability_note": "This project already uses it: City Reso 2024-10 p.5 allows three additional units under the State Density Bonus Law.",
+      "eligibility_rules": [],
+      "requirements_not_automated": [],
+      "financial_inputs_needed": [],
+      "source": {"title": "Team research table (2026-11-07); project use documented in Santa Ana Reso 2024-10 p.5", "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221637/Reso24-10_1921%20W.%20Washington%20Ave.pdf", "checked_on": "2026-11-07", "verification": "team_research_unverified"},
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_SB_684_SB_1123",
+      "name": "SB 684 / SB 1123 small-lot streamlining",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "regulatory",
+      "financial_mechanism": "faster_approvals",
+      "simulation": "none",
+      "complexity": "Medium–high",
+      "how_it_works": "Streamlined approvals for qualifying developments of up to 10 homes — saves time (and carrying cost) on future sites; this site's map is already approved.",
+      "availability": "not_verified_do_not_recommend_as_available",
+      "availability_note": "From the team's research table; statute text not read by the team.",
+      "eligibility_rules": [],
+      "requirements_not_automated": ["Statutory eligibility (zoning, lot size, unit count)"],
+      "financial_inputs_needed": [],
+      "source": {"title": "Team research table (2026-11-07) — primary source not yet linked", "url": null, "checked_on": "2026-11-07", "verification": "team_research_unverified"},
+      "automatic_eligibility_decision_allowed": false
+    },
+    {
+      "id": "CA_AB_130_CEQA_INFILL",
+      "name": "AB 130 CEQA infill exemption",
+      "jurisdiction": ["CA"],
+      "project_types": ["affordable_homeownership"],
+      "category": "regulatory",
+      "financial_mechanism": "reduced_review_cost_and_delay",
+      "simulation": "none",
+      "complexity": "High eligibility complexity",
+      "how_it_works": "Potential reduction in environmental-review expense and approval delay for qualifying infill housing.",
+      "availability": "not_verified_do_not_recommend_as_available",
+      "availability_note": "From the team's research table; statute not read. This project's own CEQA record (SCH #2024061058) is listed in the case study but was not opened by the team.",
+      "eligibility_rules": [],
+      "requirements_not_automated": ["Statutory infill criteria"],
+      "financial_inputs_needed": [],
+      "source": {"title": "Team research table (2026-11-07) — primary source not yet linked", "url": null, "checked_on": "2026-11-07", "verification": "team_research_unverified"},
+      "automatic_eligibility_decision_allowed": false
+    }
+  ]
+}

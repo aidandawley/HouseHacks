@@ -123,6 +123,7 @@ def create_project(
             raise ValueError("candidate_home_counts must be positive integers")
         data.update(
             site=None, sources=[], notes=None, input_provenance={}, location=location or None,
+            screening_facts={}, cost_reductions=[],
             summary="New project. Every input starts as an ASSUMPTION until you replace it with your own or a sourced value.",
             candidate_home_counts=counts, default_home_count=counts[len(counts) // 2], documented_home_count=None,
             scenario_labels={},

@@ -36,9 +36,14 @@ def _usd(d: Decimal) -> str:
 def compare(request: CompareRequest) -> Comparison:
     affordability = calculate_affordability(request.household)
     funding = summarize_funding(request.funding_sources)
+    tax_reduction = sum((r.amount for r in request.cost_reductions if r.line == "property_tax_carry"), Decimal(0))
     scenarios = [
         analyze_development(
-            n, request.development, affordability.affordable_sale_price_per_home, funding.counted_project_support
+            n,
+            request.development,
+            affordability.affordable_sale_price_per_home,
+            funding.counted_project_support,
+            property_tax_reduction=tax_reduction,
         )
         for n in request.candidate_home_counts  # already unique + ascending (validated)
     ]

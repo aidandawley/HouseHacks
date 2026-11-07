@@ -5,7 +5,8 @@ Cost formula (plan §5B):
     SOFT        = HARD × soft_cost_rate
     CONTINGENCY = (HARD + site_work_cost) × contingency_rate
     FINANCING   = (land + site_work + HARD + SOFT) × financing_rate
-    TDC         = land + site_work + HARD + SOFT + CONTINGENCY + FINANCING
+    TAX         = property_tax_carry − hypothetical reductions (default 0; never below 0)
+    TDC         = land + site_work + HARD + SOFT + CONTINGENCY + FINANCING + TAX
 
 Each line item is rounded half-up to cents as it is produced, and later lines
 use the rounded values, so the displayed lines always add up exactly to TDC.
@@ -121,6 +122,7 @@ def summarize_funding(sources: list[FundingSource]) -> FundingSummary:
 class PerHome(BaseModel):
     """Scenario totals ÷ homes, each rounded to cents (so lines may differ from the total by a few cents)."""
 
+    property_tax: Money
     land: Money
     site_work: Money
     hard: Money
@@ -157,6 +159,8 @@ class ScenarioResult(BaseModel):
     soft_cost: Money
     contingency: Money
     financing_cost: Money
+    property_tax_carry: Money  # after any HYPOTHETICAL reductions
+    property_tax_reduction: Money  # hypothetical what-if reductions applied (0 = none)
     total_development_cost: Money
     sale_price_per_home: Money
     sale_proceeds: Money
@@ -180,6 +184,7 @@ LINE_LABELS = {
     "soft": "design, permits & fees (soft costs)",
     "contingency": "contingency cushion",
     "financing": "interest & holding costs",
+    "property_tax": "property taxes while held",
 }
 
 
@@ -209,6 +214,7 @@ def analyze_development(
     dev: DevelopmentInputs,
     sale_price_per_home: Decimal,
     counted_support: Decimal,
+    property_tax_reduction: Decimal = Decimal(0),
 ) -> ScenarioResult:
     with localcontext() as ctx:
         ctx.prec = 50
@@ -218,7 +224,9 @@ def analyze_development(
         soft = round_money(hard * dev.soft_cost_rate)
         contingency = round_money((hard + site) * dev.contingency_rate)
         financing = round_money((land + site + hard + soft) * dev.financing_rate)
-        tdc = land + site + hard + soft + contingency + financing
+        tax_reduction = round_money(min(property_tax_reduction, dev.property_tax_carry))
+        tax = round_money(dev.property_tax_carry) - tax_reduction
+        tdc = land + site + hard + soft + contingency + financing + tax
 
         price = round_money(sale_price_per_home)  # rounded once, before multiplying (plan §5A)
         proceeds = homes * price
@@ -239,6 +247,8 @@ def analyze_development(
             soft_cost=soft,
             contingency=contingency,
             financing_cost=financing,
+            property_tax_carry=tax,
+            property_tax_reduction=tax_reduction,
             total_development_cost=tdc,
             sale_price_per_home=price,
             sale_proceeds=proceeds,
@@ -252,6 +262,7 @@ def analyze_development(
             within_capacity=within_capacity,
             eligible=within_cap and within_capacity,
             per_home=PerHome(
+                property_tax=round_money(tax / homes),
                 land=round_money(land / homes),
                 site_work=round_money(site / homes),
                 hard=round_money(hard / homes),
