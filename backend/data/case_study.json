@@ -1,0 +1,65 @@
+{
+  "id": "homeforge-oc-illustrative-v2",
+  "name": "Orange County affordable-homeownership concept",
+  "location": "Santa Ana, California",
+  "case_type": "illustrative",
+  "candidate_home_counts": [6, 8, 10],
+  "verified_facts": {},
+  "sources": [],
+  "reference_links": [
+    {"title": "HCD income limits", "url": "https://www.hcd.ca.gov/grants-and-funding/income-limits", "usage": "reference_only"},
+    {"title": "Freddie Mac mortgage survey", "url": "https://www.freddiemac.com/pmms", "usage": "reference_only"},
+    {"title": "CalHome program", "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome-program", "usage": "reference_only"},
+    {"title": "CalHFA MyHome", "url": "https://www.calhfa.ca.gov/homebuyer/programs/myhome.htm", "usage": "reference_only"}
+  ],
+  "household": {
+    "annual_income": 100000,
+    "household_size": 4,
+    "housing_cost_ratio": 0.33,
+    "annual_mortgage_rate": 0.07,
+    "mortgage_term_years": 30,
+    "other_housing_costs_monthly": 550,
+    "buyer_cash_down_payment": 15000
+  },
+  "development": {
+    "land_cost": 600000,
+    "site_work_cost": 100000,
+    "gross_sqft_per_home": 1100,
+    "hard_cost_per_sqft": 300,
+    "soft_cost_rate": 0.20,
+    "contingency_rate": 0.10,
+    "financing_rate": 0.05,
+    "illustrative_site_capacity": 10,
+    "additional_subsidy_budget": 900000
+  },
+  "funding_sources": [
+    {
+      "id": "demo-city",
+      "name": "Illustrative city development grant",
+      "amount": 500000,
+      "status": "committed",
+      "instrument": "development_grant",
+      "basis": "illustrative_assumption",
+      "source": null
+    },
+    {
+      "id": "demo-donor",
+      "name": "Illustrative pledged donations",
+      "amount": 300000,
+      "status": "committed",
+      "instrument": "donation",
+      "basis": "illustrative_assumption",
+      "source": null
+    },
+    {
+      "id": "calhome-reference",
+      "name": "CalHome — explore program rules",
+      "amount": null,
+      "status": "potential",
+      "instrument": "development_grant",
+      "basis": "reference_only",
+      "source": null
+    }
+  ],
+  "notes": "Every dollar and ratio in this scenario is illustrative, including the modeled 'committed' funding rows. No real funding awards are implied."
+}
