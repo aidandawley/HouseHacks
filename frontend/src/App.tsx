@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createProject,
   deleteProject,
@@ -19,6 +19,7 @@ import { SiteFacts } from "./components/SiteFacts";
 import type { CompareRequest, CompareResponse, InputProvenance, Project, ProjectSummary, Provenance } from "./types";
 
 const DEBOUNCE_MS = 300;
+const HousingScene = lazy(() => import("./components/HousingScene"));
 
 function toRequest(p: Project): CompareRequest {
   // Deep copy so edits never mutate the loaded project we revert to.
@@ -128,6 +129,10 @@ export default function App() {
 
   const stale = pending || analysisError !== null;
   const scenario = analysis?.scenarios.find((s) => s.homes === selectedHomes) ?? null;
+  const fact = (key: string) => project?.site?.facts.find((f) => f.key === key);
+  const parkingFact = fact("parking");
+  const areaFact = fact("site_area");
+  const siteAddress = project?.site?.address;
   const refs = project?.reference_sources.records ?? [];
   const rateRefs = refs
     .filter((r) => r.source_kind === "published_rate" && r.value !== undefined)
@@ -267,15 +272,27 @@ export default function App() {
           )}
         </section>
 
-        <section className="panel scene-placeholder">
+        <section className="panel scene-panel">
           <h2>3D concept view</h2>
-          {project?.site?.buildings ? (
-            <p className="muted">
-              {project.site.buildings} buildings × {project.site.units_per_building} homes — conceptual 3D visualization, not to
-              scale. (Milestone 6)
-            </p>
+          {selectedHomes !== null ? (
+            <Suspense fallback={<div className="scene-fallback">Loading 3D view…</div>}>
+              <HousingScene
+                homes={selectedHomes}
+                documentedHomes={project?.documented_home_count ?? null}
+                parkingSpaces={typeof parkingFact?.value === "number" ? parkingFact.value : null}
+                streetName={siteAddress ? `${siteAddress.split(",")[0].replace(/^\d+\s+/, "")} (orientation schematic)` : null}
+                siteLabel={
+                  typeof areaFact?.value === "number"
+                    ? `Parcel ≈ ${areaFact.value} acre (documented) — boundary schematic, not surveyed`
+                    : "Conceptual site — no parcel data"
+                }
+                scenario={scenario}
+                priceCeiling={analysis?.affordability.affordable_sale_price_per_home ?? null}
+                stale={stale}
+              />
+            </Suspense>
           ) : (
-            <p className="muted">Conceptual model — no zoning/site verification. (Milestone 6)</p>
+            <div className="scene-fallback">Loading project…</div>
           )}
         </section>
 

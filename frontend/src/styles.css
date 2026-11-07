@@ -80,3 +80,39 @@ table.compare tr.sel td { background: #e8eef5; }
 .ok { color: #1d6b45; }
 .no { color: #9b1c1c; }
 .span2 { grid-column: span 2; }
+
+/* ---------------------------------------------------------------- 3D scene */
+.scene-panel { padding: 10px 12px; display: flex; flex-direction: column; }
+.scene-wrap {
+  position: relative; isolation: isolate; height: 480px; border-radius: 8px; overflow: hidden;
+  background: linear-gradient(180deg, #dbe9f6 0%, #f3f7fb 60%, #eef3ea 100%);
+}
+.scene-wrap canvas { display: block; }
+.scene-badge {
+  position: absolute; top: 8px; left: 8px; font-size: 11px; font-weight: 600; color: #7a5a00;
+  background: rgba(255, 248, 225, 0.92); border: 1px solid #f5d77a; border-radius: 4px; padding: 3px 8px; pointer-events: none;
+}
+.scene-toggle { position: absolute; top: 8px; right: 8px; display: flex; gap: 0; }
+.scene-toggle button { font-size: 12px; padding: 4px 10px; border-radius: 0; background: rgba(255,255,255,.92); }
+.scene-toggle button:first-child { border-radius: 6px 0 0 6px; }
+.scene-toggle button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+.scene-toggle button.on { background: #12355b; color: #fff; border-color: #12355b; }
+.scene-legend {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center;
+  font-size: 11px; background: rgba(255,255,255,.88); border-radius: 6px; padding: 5px 8px; pointer-events: none;
+}
+.scene-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+.scene-legend .hint-right { margin-left: auto; }
+.scene-label {
+  white-space: nowrap; font-size: 10.5px; color: #33404d; background: rgba(255,255,255,.85);
+  border-radius: 3px; padding: 1px 5px; pointer-events: none; user-select: none;
+}
+.scene-label.lot { color: #9a5200; border: 1px dashed #e07b00; }
+.scene-label.street { color: #fff; background: rgba(40,44,52,.75); }
+.scene-label.whatif { color: #24456e; background: #e3edf9; border: 1px solid #5f7fa6; font-weight: 600; }
+.scene-label.ghost { color: #475569; border: 1px dashed #94a3b8; }
+.scene-tip {
+  white-space: nowrap; font-size: 11.5px; line-height: 1.35; background: #12355b; color: #fff;
+  padding: 5px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.25); pointer-events: none;
+}
+.scene-fallback { height: 480px; display: grid; place-items: center; color: #7b8794; font-size: 13px; }
