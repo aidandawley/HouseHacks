@@ -20,6 +20,7 @@ Hackathon window 10:00 AM–2:30 PM; submission due 2:30 PM on public `main`.
 - Default demo: **Santa Ana — 1921 W. Washington Ave.** (`backend/data/projects/santa-ana-1921-w-washington.json`), a real Habitat OC 6-home / 3-duplex site. Spec: `HomeForge_Santa_Ana_Case_Study.md`.
 - Site facts are `DOCUMENTED` (City of Santa Ana Resolutions 2024-10 / 2024-11, PDF pages cited), `DERIVED`, `ASSUMPTION` or `UNKNOWN` (value null — never guess). Modeled inputs live in household/development/funding, never in `site.facts`.
 - The $2.2M city grant is a **conditional ceiling**: `status=conditional`, `documented_max=2200000`, `amount` = modeled allocation (default $0). Never default it to the full ceiling.
+- Projects with `documented_home_count` (Santa Ana: 6) use `analysis_mode=documented_configuration`: the analysis reports that configuration's gap and treats other counts as what-ifs (no "best fit"). Projects without it use max-homes-under-cap.
 - Seed projects (`backend/data/projects/`) are read-only. User projects are JSON files in `backend/data/user_projects/` (gitignored). The illustrative 6/8/10 concept seed backs the plan's numeric test oracle.
 
 ## Project rules

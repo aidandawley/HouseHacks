@@ -261,6 +261,7 @@
     8
   ],
   "default_home_count": 6,
+  "documented_home_count": 6,
   "scenario_labels": {
     "4": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED",
     "6": "DOCUMENTED configuration (Resolution 2024-10)",

@@ -44,9 +44,13 @@ def test_api_returns_all_scenarios_ascending_with_cent_numbers():
     assert body["funding"]["counted_project_support"] == 800000.0
 
 
-def test_santa_ana_default_project_compares_4_6_8_and_never_recommends_8():
+def santa_ana_request() -> dict:
     p = client.get("/api/projects/santa-ana-1921-w-washington").json()
-    req = {k: p[k] for k in ("candidate_home_counts", "household", "development", "funding_sources")}
+    return {k: p[k] for k in ("candidate_home_counts", "household", "development", "funding_sources", "documented_home_count")}
+
+
+def test_santa_ana_default_project_compares_4_6_8_and_never_recommends_8():
+    req = santa_ana_request()
     body = client.post("/api/compare", json=req).json()
     assert [s["homes"] for s in body["scenarios"]] == [4, 6, 8]
     eight = body["scenarios"][2]
@@ -59,3 +63,35 @@ def test_santa_ana_default_project_compares_4_6_8_and_never_recommends_8():
     body2 = client.post("/api/compare", json=req).json()
     g0, g1 = body["scenarios"][1]["raw_gap"], body2["scenarios"][1]["raw_gap"]
     assert round(g0 - g1, 2) == 2200000
+
+
+def test_documented_site_centers_on_documented_config_with_no_best_fit():
+    req = santa_ana_request()
+    assert req["documented_home_count"] == 6
+    grant = next(f for f in req["funding_sources"] if f["id"] == "santa-ana-inclusionary-grant")
+    grant["amount"] = 2200000  # the case where max-homes-under-cap would have picked unapproved 4
+    body = client.post("/api/compare", json=req).json()
+    assert body["analysis_mode"] == "documented_configuration"
+    assert body["recommended_home_count"] is None and body["minimum_needed_if_none_fit"] is None
+    six = next(s for s in body["scenarios"] if s["homes"] == 6)
+    assert f"{six['remaining_gap']:,.2f}" in body["recommendation_reason"]
+    assert "documented 6-home" in body["recommendation_reason"]
+    assert "4 and 8 homes are unapproved what-if" in body["recommendation_reason"]
+
+
+def test_concept_project_keeps_max_homes_mode():
+    body = client.post("/api/compare", json=concept_request()).json()
+    assert body["analysis_mode"] == "max_homes_under_cap" and body["documented_home_count"] is None
+
+
+def test_documented_count_must_be_a_candidate():
+    req = santa_ana_request()
+    req["documented_home_count"] = 7
+    assert client.post("/api/compare", json=req).status_code == 422
+
+
+def test_saving_inputs_does_not_drop_documented_count():
+    req = santa_ana_request()
+    req.pop("documented_home_count")
+    p = client.post("/api/projects", json={"name": "SA copy", "from_id": "santa-ana-1921-w-washington", "inputs": req}).json()
+    assert p["documented_home_count"] == 6

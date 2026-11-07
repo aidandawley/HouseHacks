@@ -11,7 +11,10 @@ interface Props {
 
 export function ScenarioComparison({ analysis, selected, scenarioLabels, stale, onSelect }: Props) {
   if (!analysis) return <p className="muted">No analysis yet.</p>;
+  const documentedMode = analysis.analysis_mode === "documented_configuration";
+  const doc = analysis.documented_home_count;
   const rec = analysis.recommended_home_count;
+  const target = documentedMode ? doc : rec;
   return (
     <div className={stale ? "stale" : undefined}>
       <table className="compare">
@@ -31,7 +34,12 @@ export function ScenarioComparison({ analysis, selected, scenarioLabels, stale, 
             <tr key={s.homes} className={s.homes === selected ? "sel" : undefined} onClick={() => onSelect(s.homes)}>
               <td>
                 <strong>{s.homes}</strong>
-                {s.homes === rec && <span className="tag verified" style={{ marginLeft: 6 }}>best fit</span>}
+                {documentedMode && s.homes === doc && (
+                  <span className="tag verified" style={{ marginLeft: 6 }}>documented</span>
+                )}
+                {!documentedMode && s.homes === rec && (
+                  <span className="tag verified" style={{ marginLeft: 6 }}>best fit</span>
+                )}
                 {scenarioLabels[String(s.homes)] && <div className="small muted">{scenarioLabels[String(s.homes)]}</div>}
               </td>
               <td>{fmtUsd0(s.total_development_cost)}</td>
@@ -42,25 +50,28 @@ export function ScenarioComparison({ analysis, selected, scenarioLabels, stale, 
               </td>
               <td>{fmtUsd0(s.gap_per_home)}</td>
               <td className={s.eligible ? "ok" : "no"}>
-                {s.eligible
-                  ? "✓ fits cap & capacity"
-                  : !s.within_capacity
-                    ? "✗ over site capacity"
-                    : `✗ ${fmtUsd0(-s.additional_budget_headroom)} over cap`}
+                {!s.within_capacity
+                  ? "✗ over site capacity"
+                  : s.remaining_gap === 0
+                    ? "✓ pencils (no gap)"
+                    : s.eligible
+                      ? "✓ fits cap & capacity"
+                      : `✗ ${fmtUsd0(-s.additional_budget_headroom)} over cap`}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="small">
-        <button type="button" disabled={rec === null} onClick={() => rec !== null && onSelect(rec)}>
-          Find best configuration
+        <button type="button" disabled={target === null} onClick={() => target !== null && onSelect(target)}>
+          {documentedMode ? "Show documented configuration" : "Find best configuration"}
         </button>{" "}
         {analysis.recommendation_reason}
       </p>
       <p className="small muted">
-        “Best fit” = most homes whose remaining gap fits the assumed extra-subsidy cap and site capacity. A screening signal,
-        not an approval or a buildability claim.
+        {documentedMode
+          ? "Real documented site: the approved configuration is the subject of the analysis. Other counts are what-if comparisons, not recommendations or buildability claims."
+          : "“Best fit” = most homes whose remaining gap fits the assumed extra-subsidy cap and site capacity. A screening signal, not an approval or a buildability claim."}
       </p>
     </div>
   );

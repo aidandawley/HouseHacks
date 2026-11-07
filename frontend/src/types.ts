@@ -138,6 +138,7 @@ export interface Project {
   reference_links: ReferenceLink[];
   candidate_home_counts: number[];
   default_home_count?: number | null;
+  documented_home_count?: number | null;
   scenario_labels: Record<string, string>;
   household: HouseholdInputs;
   development: DevelopmentInputs;
@@ -154,6 +155,8 @@ export interface CompareRequest {
   household: HouseholdInputs;
   development: DevelopmentInputs;
   funding_sources: FundingSource[];
+  /** Real documented site: analysis centers on this approved count; others are what-ifs. */
+  documented_home_count?: number | null;
 }
 
 export interface AffordabilityResult {
@@ -207,6 +210,8 @@ export interface ScenarioResult {
 }
 
 export interface CompareResponse {
+  analysis_mode: "max_homes_under_cap" | "documented_configuration";
+  documented_home_count: number | null;
   affordability: AffordabilityResult;
   funding: FundingSummary;
   scenarios: ScenarioResult[];

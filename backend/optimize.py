@@ -17,6 +17,8 @@ from .models import CompareRequest, Money
 
 
 class Comparison(BaseModel):
+    analysis_mode: str  # "max_homes_under_cap" | "documented_configuration"
+    documented_home_count: int | None
     affordability: AffordabilityResult
     funding: FundingSummary
     scenarios: list[ScenarioResult]
@@ -40,6 +42,68 @@ def compare(request: CompareRequest) -> Comparison:
         for n in request.candidate_home_counts  # already unique + ascending (validated)
     ]
 
+    if request.documented_home_count is not None:
+        mode = "documented_configuration"
+        recommended, minimum_needed, reason = None, None, _documented_reason(request, scenarios, funding)
+    else:
+        mode = "max_homes_under_cap"
+        recommended, minimum_needed, reason = _max_homes_under_cap(request, scenarios)
+
+    warnings = [
+        "Costs, buyer income, funding commitments, site capacity and mortgage inputs are scenario "
+        "assumptions unless labeled otherwise; not verified Habitat project data."
+    ]
+    if affordability.warning:
+        warnings.append(affordability.warning)
+    if funding.potential_uncommitted_amount > 0:
+        warnings.append(
+            f"{_usd(funding.potential_uncommitted_amount)} of potential/candidate funding is shown but NOT counted."
+        )
+    if funding.excluded_amount > 0:
+        warnings.append(
+            f"{_usd(funding.excluded_amount)} of loans/buyer assistance is shown but does not reduce the subsidy gap."
+        )
+
+    return Comparison(
+        analysis_mode=mode,
+        documented_home_count=request.documented_home_count,
+        affordability=affordability,
+        funding=funding,
+        scenarios=scenarios,
+        recommended_home_count=recommended,
+        recommendation_reason=reason,
+        minimum_needed_if_none_fit=minimum_needed,
+        warnings=warnings,
+    )
+
+
+def _documented_reason(request: CompareRequest, scenarios: list[ScenarioResult], funding: FundingSummary) -> str:
+    """Real documented site: report the approved configuration's gap; others are what-ifs only."""
+    doc = next(s for s in scenarios if s.homes == request.documented_home_count)
+    cap = request.development.additional_subsidy_budget
+    if doc.remaining_gap == 0:
+        reason = (
+            f"The documented {doc.homes}-home configuration pencils under these assumptions "
+            f"(modeled surplus {_usd(doc.modeled_surplus)}) after {_usd(funding.counted_project_support)} of counted funding."
+        )
+    else:
+        reason = (
+            f"The documented {doc.homes}-home configuration leaves a {_usd(doc.remaining_gap)} gap "
+            f"({_usd(doc.gap_per_home)} per home) after {_usd(funding.counted_project_support)} of counted "
+            f"assumed/modeled funding. "
+        )
+        reason += (
+            f"That fits the assumed {_usd(cap)} extra-subsidy cap."
+            if doc.within_subsidy_cap
+            else f"That is {_usd(doc.remaining_gap - cap)} more than the assumed {_usd(cap)} extra-subsidy cap."
+        )
+    others = [str(s.homes) for s in scenarios if s.homes != doc.homes]
+    if others:
+        reason += f" {' and '.join(others)} homes are unapproved what-if comparisons, not recommendations."
+    return reason
+
+
+def _max_homes_under_cap(request: CompareRequest, scenarios: list[ScenarioResult]):
     eligible = [s for s in scenarios if s.eligible]
     capacity_ok = [s for s in scenarios if s.within_capacity]
     cap = request.development.additional_subsidy_budget
@@ -79,27 +143,4 @@ def compare(request: CompareRequest) -> Comparison:
             f"{request.development.illustrative_site_capacity} homes."
         )
 
-    warnings = [
-        "Costs, buyer income, funding commitments, site capacity and mortgage inputs are scenario "
-        "assumptions unless labeled otherwise; not verified Habitat project data."
-    ]
-    if affordability.warning:
-        warnings.append(affordability.warning)
-    if funding.potential_uncommitted_amount > 0:
-        warnings.append(
-            f"{_usd(funding.potential_uncommitted_amount)} of potential/candidate funding is shown but NOT counted."
-        )
-    if funding.excluded_amount > 0:
-        warnings.append(
-            f"{_usd(funding.excluded_amount)} of loans/buyer assistance is shown but does not reduce the subsidy gap."
-        )
-
-    return Comparison(
-        affordability=affordability,
-        funding=funding,
-        scenarios=scenarios,
-        recommended_home_count=recommended,
-        recommendation_reason=reason,
-        minimum_needed_if_none_fit=minimum_needed,
-        warnings=warnings,
-    )
+    return recommended, minimum_needed, reason

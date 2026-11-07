@@ -107,6 +107,15 @@ class CompareRequest(_Strict):
     household: HouseholdInputs
     development: DevelopmentInputs
     funding_sources: list[FundingSource] = Field(default_factory=list)
+    # Set for real documented sites: the analysis centers on this approved
+    # configuration and treats other counts as what-if comparisons (no "best fit").
+    documented_home_count: Optional[int] = None
+
+    @model_validator(mode="after")
+    def _documented_is_candidate(self) -> "CompareRequest":
+        if self.documented_home_count is not None and self.documented_home_count not in self.candidate_home_counts:
+            raise ValueError("documented_home_count must be one of candidate_home_counts")
+        return self
 
     @field_validator("candidate_home_counts")
     @classmethod
@@ -194,6 +203,7 @@ class Project(_Strict):
     reference_links: list[dict] = Field(default_factory=list)
     candidate_home_counts: list[int] = Field(min_length=1)
     default_home_count: Optional[int] = None  # selected on load / reset
+    documented_home_count: Optional[int] = None  # see CompareRequest
     # Per-count labels, e.g. {"6": "DOCUMENTED", "8": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED"}
     scenario_labels: dict[str, str] = Field(default_factory=dict)
     household: HouseholdInputs
@@ -222,4 +232,5 @@ class Project(_Strict):
             household=self.household,
             development=self.development,
             funding_sources=self.funding_sources,
+            documented_home_count=self.documented_home_count,
         )

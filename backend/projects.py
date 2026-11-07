@@ -122,7 +122,8 @@ def create_project(name: str, from_id: str | None = None, inputs: CompareRequest
 
 def _apply_inputs(project: Project, inputs: CompareRequest, mark_user: bool) -> Project:
     data = project.model_dump(mode="json")
-    new = inputs.model_dump(mode="json")
+    # documented_home_count is a property of the project record, not an editable input.
+    new = inputs.model_dump(mode="json", exclude={"documented_home_count"})
     prov = dict(data.get("input_provenance") or {})
     if mark_user:
         for section in ("household", "development"):

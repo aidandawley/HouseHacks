@@ -27,6 +27,7 @@ function toRequest(p: Project): CompareRequest {
     household: p.household,
     development: p.development,
     funding_sources: p.funding_sources,
+    documented_home_count: p.documented_home_count ?? null,
   });
 }
 
