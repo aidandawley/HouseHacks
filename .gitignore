@@ -19,3 +19,6 @@ venv/
 Thumbs.db
 *.log
 .pytest_cache/
+
+# HomeForge user-created projects (local only)
+backend/data/user_projects/

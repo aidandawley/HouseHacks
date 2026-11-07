@@ -18,13 +18,13 @@ def default_request() -> dict:
     }
 
 
-def test_case_study_includes_fixture_and_references():
+def test_case_study_returns_default_santa_ana_project_with_references():
     r = client.get("/api/case-study")
     assert r.status_code == 200
     body = r.json()
-    assert body["id"] == "homeforge-oc-illustrative-v2"
-    assert body["case_type"] == "illustrative"
-    assert body["candidate_home_counts"] == [6, 8, 10]
+    assert body["id"] == "santa-ana-1921-w-washington"
+    assert body["is_default"] and body["case_type"] == "documented_site"
+    assert body["candidate_home_counts"] == [6]
     assert len(body["reference_links"]) >= 4
     refs = {r["id"]: r for r in body["reference_sources"]["records"]}
     assert refs["pmms-30yr-2026-11-05"]["value"] == 0.0718
@@ -37,7 +37,9 @@ def test_case_study_includes_fixture_and_references():
     # candidate programs carry no amount
     assert all("value" not in r for r in refs.values() if r["source_kind"] == "candidate_program")
     assert all(link["usage"] == "reference_only" for link in body["reference_links"])
-    assert {s["basis"] for s in body["funding_sources"]} <= {"illustrative_assumption", "reference_only"}
+    # the city grant is a conditional award at a modeled allocation, never defaulted to the $2.2M ceiling
+    grant = next(f for f in body["funding_sources"] if f["id"] == "santa-ana-inclusionary-grant")
+    assert grant["status"] == "conditional" and grant["documented_max"] == 2200000 and grant["amount"] < 2200000
 
 
 def test_compare_accepts_default_request():

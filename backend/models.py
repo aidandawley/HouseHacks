@@ -24,8 +24,9 @@ class _Strict(BaseModel):
 
 
 class FundingStatus(str, Enum):
-    committed = "committed"
-    potential = "potential"
+    committed = "committed"  # assumed committed within the scenario (not necessarily real)
+    conditional = "conditional"  # documented conditional award; `amount` is the MODELED allocation
+    potential = "potential"  # candidate / unconfirmed; never counted
 
 
 class FundingInstrument(str, Enum):
@@ -57,31 +58,33 @@ class SourceMetadata(_Strict):
 
 
 class HouseholdInputs(_Strict):
-    annual_income: Decimal = Field(ge=0)
+    annual_income: Money = Field(ge=0)
     household_size: int = Field(ge=1, le=12)
-    housing_cost_ratio: Decimal = Field(gt=0, le=1)
-    annual_mortgage_rate: Decimal = Field(ge=0, lt=1)
+    housing_cost_ratio: Money = Field(gt=0, le=1)
+    annual_mortgage_rate: Money = Field(ge=0, lt=1)
     mortgage_term_years: int = Field(gt=0, le=50)
-    other_housing_costs_monthly: Decimal = Field(ge=0)
-    buyer_cash_down_payment: Decimal = Field(ge=0)
+    other_housing_costs_monthly: Money = Field(ge=0)
+    buyer_cash_down_payment: Money = Field(ge=0)
 
 
 class DevelopmentInputs(_Strict):
-    land_cost: Decimal = Field(ge=0)
-    site_work_cost: Decimal = Field(ge=0)
-    gross_sqft_per_home: Decimal = Field(gt=0)
-    hard_cost_per_sqft: Decimal = Field(ge=0)
-    soft_cost_rate: Decimal = Field(ge=0, le=1)
-    contingency_rate: Decimal = Field(ge=0, le=1)
-    financing_rate: Decimal = Field(ge=0, le=1)
+    land_cost: Money = Field(ge=0)
+    site_work_cost: Money = Field(ge=0)
+    gross_sqft_per_home: Money = Field(gt=0)
+    hard_cost_per_sqft: Money = Field(ge=0)
+    soft_cost_rate: Money = Field(ge=0, le=1)
+    contingency_rate: Money = Field(ge=0, le=1)
+    financing_rate: Money = Field(ge=0, le=1)
     illustrative_site_capacity: int = Field(ge=0)
-    additional_subsidy_budget: Decimal = Field(ge=0)
+    additional_subsidy_budget: Money = Field(ge=0)
 
 
 class FundingSource(_Strict):
     id: str = Field(min_length=1)
     name: str = Field(min_length=1)
-    amount: Optional[Decimal] = Field(default=None, ge=0)
+    amount: Optional[Money] = Field(default=None, ge=0)
+    # For conditional awards: the documented ceiling (e.g. "up to $2.2M"). Never cash received.
+    documented_max: Optional[Money] = Field(default=None, ge=0)
     status: FundingStatus
     instrument: FundingInstrument
     basis: FundingBasis
@@ -94,6 +97,8 @@ class FundingSource(_Strict):
                 "basis 'verified_public_source' requires source metadata "
                 "(title, publisher, url, fact_supported)"
             )
+        if self.documented_max is not None and self.amount is not None and self.amount > self.documented_max:
+            raise ValueError(f"modeled amount for {self.id!r} exceeds its documented maximum")
         return self
 
 
@@ -119,3 +124,93 @@ class CompareRequest(_Strict):
         if len(set(ids)) != len(ids):
             raise ValueError("funding_sources ids must be unique")
         return v
+
+
+# ---------------------------------------------------------------- projects
+
+
+class FactStatus(str, Enum):
+    documented = "DOCUMENTED"
+    derived = "DERIVED"
+    assumption = "ASSUMPTION"
+    unknown = "UNKNOWN"
+
+
+class SiteFact(_Strict):
+    key: str
+    label: str
+    value: Optional[str | int | float] = None  # null when UNKNOWN; never guessed
+    unit: Optional[str] = None
+    status: FactStatus
+    source_id: Optional[str] = None
+    page: Optional[int] = None
+    note: Optional[str] = None
+
+    @model_validator(mode="after")
+    def _status_rules(self) -> "SiteFact":
+        if self.status == FactStatus.documented and not self.source_id:
+            raise ValueError(f"DOCUMENTED fact {self.key!r} needs a source_id")
+        if self.status == FactStatus.unknown and self.value is not None:
+            raise ValueError(f"UNKNOWN fact {self.key!r} must not carry a value")
+        return self
+
+
+class ProjectSource(_Strict):
+    id: str
+    title: str
+    publisher: str
+    url: HttpUrl
+    published: Optional[str] = None
+    checked_at: str
+    verification_status: str
+    note: Optional[str] = None
+
+
+class Site(_Strict):
+    address: Optional[str] = None
+    apn: Optional[str] = None
+    buildings: Optional[int] = Field(default=None, ge=1)
+    units_per_building: Optional[int] = Field(default=None, ge=1)
+    visualization_status: str = "schematic_not_to_scale"
+    facts: list[SiteFact] = Field(default_factory=list)
+
+
+class InputProvenance(_Strict):
+    kind: str  # assumption | user | published_rate | published_income_limit | documented | derived
+    source_id: Optional[str] = None
+    note: Optional[str] = None
+
+
+class Project(_Strict):
+    id: str = Field(min_length=1, pattern=r"^[a-z0-9][a-z0-9-]*$")
+    name: str = Field(min_length=1, max_length=120)
+    kind: str = "user"  # seed | user
+    is_default: bool = False
+    case_type: str = "user"  # documented_site | illustrative | user
+    location: Optional[str] = None
+    summary: Optional[str] = None
+    site: Optional[Site] = None
+    sources: list[ProjectSource] = Field(default_factory=list)
+    reference_links: list[dict] = Field(default_factory=list)
+    candidate_home_counts: list[int] = Field(min_length=1)
+    household: HouseholdInputs
+    development: DevelopmentInputs
+    funding_sources: list[FundingSource] = Field(default_factory=list)
+    input_provenance: dict[str, InputProvenance] = Field(default_factory=dict)
+    verified_facts: dict = Field(default_factory=dict)
+    notes: Optional[str] = None
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+    @field_validator("candidate_home_counts")
+    @classmethod
+    def _counts_valid(cls, v: list[int]) -> list[int]:
+        return CompareRequest._counts_valid(v)
+
+    def inputs(self) -> CompareRequest:
+        return CompareRequest(
+            candidate_home_counts=self.candidate_home_counts,
+            household=self.household,
+            development=self.development,
+            funding_sources=self.funding_sources,
+        )

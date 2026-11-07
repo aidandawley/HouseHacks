@@ -54,6 +54,8 @@ const LIMIT_LABELS: Record<string, string> = {
 interface Props {
   value: HouseholdInputs;
   provenance: HouseholdProvenance;
+  /** Per-field provenance notes from the project file (e.g. why a value was chosen). */
+  notes?: Partial<Record<HouseholdKey, string>>;
   onChange: (next: HouseholdInputs, key: HouseholdKey, kind: Provenance) => void;
   rateRefs: ReferenceSource[]; // newest first
   incomeLimitRef?: ReferenceSource;
@@ -71,7 +73,7 @@ function SourceNote({ src, children }: { src: ReferenceSource; children?: ReactN
   );
 }
 
-export function HouseholdControls({ value, provenance, onChange, rateRefs, incomeLimitRef }: Props) {
+export function HouseholdControls({ value, provenance, notes, onChange, rateRefs, incomeLimitRef }: Props) {
   const kindOf = (k: HouseholdKey): Provenance => provenance[k] ?? "assumption";
 
   const field = (f: FieldSpec, extra?: ReactNode) => {
@@ -93,6 +95,7 @@ export function HouseholdControls({ value, provenance, onChange, rateRefs, incom
         )}
         <input type="number" min={f.min} max={f.max} step={f.step} value={shown} onChange={(e) => set(e.target.value)} />
         {f.hint && <span className="hint">{f.hint}</span>}
+        {notes?.[f.key] && kindOf(f.key) !== "user" && <span className="hint">{notes[f.key]}</span>}
         {extra}
       </label>
     );

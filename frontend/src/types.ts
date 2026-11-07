@@ -1,6 +1,6 @@
 // Mirrors backend/models.py (plan section 7). Keep in sync.
 
-export type FundingStatus = "committed" | "potential";
+export type FundingStatus = "committed" | "conditional" | "potential";
 export type FundingInstrument = "development_grant" | "donation" | "repayable_loan" | "buyer_assistance";
 export type FundingBasis = "illustrative_assumption" | "user_entered" | "reference_only" | "verified_public_source";
 
@@ -39,6 +39,8 @@ export interface FundingSource {
   id: string;
   name: string;
   amount: number | null;
+  /** Documented ceiling of a conditional award; never cash received. */
+  documented_max?: number | null;
   status: FundingStatus;
   instrument: FundingInstrument;
   basis: FundingBasis;
@@ -71,19 +73,77 @@ export interface ReferenceSource {
   area_median_income_4_person?: number;
 }
 
-export interface CaseStudy {
+export type FactStatus = "DOCUMENTED" | "DERIVED" | "ASSUMPTION" | "UNKNOWN";
+
+export interface SiteFact {
+  key: string;
+  label: string;
+  value: string | number | null;
+  unit?: string | null;
+  status: FactStatus;
+  source_id?: string | null;
+  page?: number | null;
+  note?: string | null;
+}
+
+export interface Site {
+  address?: string | null;
+  apn?: string | null;
+  buildings?: number | null;
+  units_per_building?: number | null;
+  visualization_status: string;
+  facts: SiteFact[];
+}
+
+export interface ProjectSource {
+  id: string;
+  title: string;
+  publisher: string;
+  url: string;
+  published?: string | null;
+  checked_at: string;
+  verification_status: string;
+  note?: string | null;
+}
+
+export interface InputProvenance {
+  kind: Provenance | string;
+  source_id?: string | null;
+  note?: string | null;
+}
+
+export interface ProjectSummary {
   id: string;
   name: string;
-  location: string;
-  case_type: "illustrative" | "verified";
+  kind: "seed" | "user";
+  is_default: boolean;
+  case_type: string;
+  location: string | null;
+  summary: string | null;
   candidate_home_counts: number[];
-  verified_facts: Record<string, unknown>;
-  sources: SourceMetadata[];
+  updated_at: string | null;
+}
+
+/** Full project as returned by GET /api/projects/{id} (and /api/case-study for the default). */
+export interface Project {
+  id: string;
+  name: string;
+  kind: "seed" | "user";
+  is_default: boolean;
+  case_type: "documented_site" | "illustrative" | "user" | string;
+  location: string | null;
+  summary: string | null;
+  site: Site | null;
+  sources: ProjectSource[];
   reference_links: ReferenceLink[];
+  candidate_home_counts: number[];
   household: HouseholdInputs;
   development: DevelopmentInputs;
   funding_sources: FundingSource[];
-  notes: string;
+  input_provenance: Record<string, InputProvenance>;
+  notes: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
   reference_sources: { about: string; records: ReferenceSource[] };
 }
 
@@ -107,7 +167,6 @@ export interface CompareResponse {
   engine_status?: string;
   affordability: AffordabilityResult;
   candidate_home_counts: number[];
-  case_type: string;
   warnings: string[];
 }
 
@@ -115,6 +174,8 @@ export interface CompareResponse {
 export type Provenance =
   | "assumption"
   | "user"
+  | "documented"
+  | "derived"
   | "published_rate"
   | "published_income_limit"
   | "candidate"

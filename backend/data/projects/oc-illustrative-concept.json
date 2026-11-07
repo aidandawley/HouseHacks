@@ -1,14 +1,12 @@
 {
   "id": "homeforge-oc-illustrative-v2",
-  "name": "Orange County affordable-homeownership concept",
-  "location": "Santa Ana, California",
+  "name": "Illustrative OC concept (6/8/10 homes)",
+  "kind": "seed",
+  "is_default": false,
   "case_type": "illustrative",
-  "candidate_home_counts": [
-    6,
-    8,
-    10
-  ],
-  "verified_facts": {},
+  "location": "Santa Ana, California",
+  "summary": "Fully hypothetical 6/8/10-home concept used for the plan's numeric test oracle. Not a real site.",
+  "site": null,
   "sources": [],
   "reference_links": [
     {
@@ -41,6 +39,11 @@
       "usage": "reference_only",
       "reference_source_id": "calhfa-homebuyer"
     }
+  ],
+  "candidate_home_counts": [
+    6,
+    8,
+    10
   ],
   "household": {
     "annual_income": 100000,
@@ -91,5 +94,7 @@
       "source": null
     }
   ],
+  "input_provenance": {},
+  "verified_facts": {},
   "notes": "Every dollar and ratio in this scenario is an ASSUMPTION, including the modeled 'committed' funding rows and the 7% default mortgage rate. No real funding awards are implied. Published references (Freddie Mac rate, HCD income limits) are shown separately with their dates and are not the demo defaults."
 }

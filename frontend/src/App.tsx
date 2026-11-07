@@ -1,26 +1,49 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchCaseStudy, postCompare } from "./api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createProject,
+  deleteProject,
+  fetchDefaultProject,
+  fetchProject,
+  listProjects,
+  postCompare,
+  updateProject,
+} from "./api";
 import { FinancialSummary } from "./components/FinancialSummary";
-import { HouseholdControls, type HouseholdProvenance } from "./components/HouseholdControls";
-import type { CaseStudy, CompareRequest, CompareResponse } from "./types";
+import { HouseholdControls, type HouseholdKey, type HouseholdProvenance } from "./components/HouseholdControls";
+import { ProjectBar } from "./components/ProjectBar";
+import { ProvenanceTag } from "./components/ProvenanceTag";
+import { SiteFacts } from "./components/SiteFacts";
+import type { CompareRequest, CompareResponse, InputProvenance, Project, ProjectSummary, Provenance } from "./types";
 
 const DEBOUNCE_MS = 300;
 
-function toRequest(cs: CaseStudy): CompareRequest {
-  // Deep copy so edits never mutate the fixture we reset to.
+function toRequest(p: Project): CompareRequest {
+  // Deep copy so edits never mutate the loaded project we revert to.
   return structuredClone({
-    candidate_home_counts: cs.candidate_home_counts,
-    household: cs.household,
-    development: cs.development,
-    funding_sources: cs.funding_sources,
+    candidate_home_counts: p.candidate_home_counts,
+    household: p.household,
+    development: p.development,
+    funding_sources: p.funding_sources,
   });
 }
 
+const householdProvOf = (p: Project): Record<string, InputProvenance> =>
+  Object.fromEntries(Object.entries(p.input_provenance).filter(([k]) => k.startsWith("household.")));
+
+const CASE_TYPE_LABEL: Record<string, string> = {
+  documented_site: "Real documented site",
+  illustrative: "Illustrative concept",
+  user: "User project",
+};
+
 export default function App() {
-  const [caseStudy, setCaseStudy] = useState<CaseStudy | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [project, setProject] = useState<Project | null>(null);
   const [inputs, setInputs] = useState<CompareRequest | null>(null);
-  const [householdProv, setHouseholdProv] = useState<HouseholdProvenance>({});
+  // Household field provenance keyed "household.<field>", seeded from the project file.
+  const [prov, setProv] = useState<Record<string, InputProvenance>>({});
+  const [busy, setBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Last successful (labeled) result is kept on error, but marked stale.
   const [analysis, setAnalysis] = useState<CompareResponse | null>(null);
@@ -28,21 +51,55 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const reqSeq = useRef(0);
 
-  const loadCaseStudy = useCallback(async () => {
+  const show = useCallback((p: Project) => {
+    setProject(p);
+    setInputs(toRequest(p));
+    setProv(householdProvOf(p));
+  }, []);
+
+  const run = useCallback(async (fn: () => Promise<void>) => {
+    setBusy(true);
     setLoadError(null);
     try {
-      const cs = await fetchCaseStudy();
-      setCaseStudy(cs);
-      setInputs(toRequest(cs));
-      setHouseholdProv({});
+      await fn();
     } catch (e) {
       setLoadError((e as Error).message);
+    } finally {
+      setBusy(false);
     }
   }, []);
 
+  const refreshList = useCallback(async () => setProjects(await listProjects()), []);
+
+  const loadDefault = useCallback(
+    () =>
+      run(async () => {
+        const [p] = await Promise.all([fetchDefaultProject(), refreshList()]);
+        show(p);
+      }),
+    [run, refreshList, show],
+  );
+
   useEffect(() => {
-    void loadCaseStudy();
-  }, [loadCaseStudy]);
+    void loadDefault();
+  }, [loadDefault]);
+
+  const dirty = useMemo(() => {
+    if (!project || !inputs) return false;
+    return (
+      JSON.stringify(inputs) !== JSON.stringify(toRequest(project)) ||
+      JSON.stringify(prov) !== JSON.stringify(householdProvOf(project))
+    );
+  }, [project, inputs, prov]);
+
+  const confirmDiscard = () => !dirty || window.confirm("Discard unsaved edits to this project?");
+
+  const mergedProvenance = (): Record<string, InputProvenance> => {
+    const nonHousehold = Object.fromEntries(
+      Object.entries(project?.input_provenance ?? {}).filter(([k]) => !k.startsWith("household.")),
+    );
+    return { ...nonHousehold, ...prov };
+  };
 
   // Debounced analysis on every input change; out-of-order responses are dropped.
   useEffect(() => {
@@ -70,11 +127,71 @@ export default function App() {
   }, [inputs]);
 
   const stale = pending || analysisError !== null;
-  const refs = caseStudy?.reference_sources.records ?? [];
+  const refs = project?.reference_sources.records ?? [];
   const rateRefs = refs
     .filter((r) => r.source_kind === "published_rate" && r.value !== undefined)
     .sort((a, b) => (b.effective_date ?? "").localeCompare(a.effective_date ?? ""));
   const incomeLimitRef = refs.find((r) => r.id === "hcd-state-il-2026-orange");
+
+  const householdKinds: HouseholdProvenance = Object.fromEntries(
+    Object.entries(prov).map(([k, v]) => [k.slice("household.".length), v.kind as Provenance]),
+  );
+  const householdNotes = Object.fromEntries(
+    Object.entries(prov)
+      .filter(([, v]) => v.note)
+      .map(([k, v]) => [k.slice("household.".length), v.note!]),
+  ) as Partial<Record<HouseholdKey, string>>;
+
+  // ------------------------------------------------------------ project actions
+
+  const onSelect = (id: string) => {
+    if (id === project?.id || !confirmDiscard()) return;
+    void run(async () => show(await fetchProject(id)));
+  };
+
+  const onNewBlank = () => {
+    if (!confirmDiscard()) return;
+    const name = window.prompt("Name for the new project:", "New project");
+    if (!name?.trim()) return;
+    void run(async () => {
+      const p = await createProject({ name: name.trim() });
+      await refreshList();
+      show(p);
+    });
+  };
+
+  const onSaveAsNew = () => {
+    if (!project || !inputs) return;
+    const name = window.prompt("Save a copy (with your current edits) as:", `${project.name} (copy)`);
+    if (!name?.trim()) return;
+    void run(async () => {
+      let p = await createProject({ name: name.trim(), from_id: project.id, inputs });
+      p = await updateProject(p.id, { input_provenance: mergedProvenance() });
+      await refreshList();
+      show(p);
+    });
+  };
+
+  const onSave = () => {
+    if (!project || !inputs || project.kind === "seed") return;
+    void run(async () => {
+      const p = await updateProject(project.id, { inputs, input_provenance: mergedProvenance() });
+      await refreshList();
+      show(p);
+    });
+  };
+
+  const onDelete = () => {
+    if (!project || project.kind === "seed") return;
+    if (!window.confirm(`Delete "${project.name}"? This cannot be undone.`)) return;
+    void run(async () => {
+      await deleteProject(project.id);
+      const [p] = await Promise.all([fetchDefaultProject(), refreshList()]);
+      show(p);
+    });
+  };
+
+  const onRevert = () => project && show(project);
 
   return (
     <div className="app">
@@ -82,14 +199,26 @@ export default function App() {
         <strong>HOMEFORGE</strong>
         <span className="pill">FUND IT</span>
         <span className="muted">Scenario-based feasibility screening — not underwriting</span>
-        <button className="reset" onClick={() => void loadCaseStudy()}>
+        <button className="reset" disabled={busy} onClick={() => confirmDiscard() && void loadDefault()}>
           Reset demo
         </button>
       </header>
       <p className="disclaimer">
-        Prototype for early-stage screening only — not legal, financial or lending advice. Every number marked ASSUMPTION is
-        made up; consult a qualified professional before any decision.
+        Conceptual financial model. Not a verified site design, legal determination, lending quote, or the developer's actual
+        budget — prototype only, not legal, financial or lending advice.
       </p>
+      <ProjectBar
+        projects={projects}
+        current={project}
+        dirty={dirty}
+        busy={busy}
+        onSelect={onSelect}
+        onNewBlank={onNewBlank}
+        onSaveAsNew={onSaveAsNew}
+        onSave={onSave}
+        onDelete={onDelete}
+        onRevert={onRevert}
+      />
 
       {loadError && <div className="banner error">{loadError}</div>}
       {analysisError && (
@@ -100,27 +229,52 @@ export default function App() {
       )}
 
       <main className="grid">
+        {project && (
+          <section className="panel wide">
+            <div className="project-head">
+              <h1>{project.name}</h1>
+              <span className="tag reference">{CASE_TYPE_LABEL[project.case_type] ?? project.case_type}</span>
+              {project.kind === "seed" && <span className="muted small">read-only demo — use “Save as new…” to keep edits</span>}
+            </div>
+            {project.summary && <p className="small">{project.summary}</p>}
+            <details open={project.case_type === "documented_site"}>
+              <summary>Site facts &amp; sources</summary>
+              <SiteFacts project={project} />
+            </details>
+          </section>
+        )}
+
         <section className="panel">
           <h2>Affordability</h2>
-          {inputs && caseStudy ? (
+          {inputs ? (
             <HouseholdControls
               value={inputs.household}
-              provenance={householdProv}
+              provenance={householdKinds}
+              notes={householdNotes}
               rateRefs={rateRefs}
               incomeLimitRef={incomeLimitRef}
               onChange={(household, key, kind) => {
                 setInputs({ ...inputs, household });
-                setHouseholdProv((p) => ({ ...p, [key]: kind }));
+                const sourceId =
+                  kind === "published_rate" ? rateRefs.find((r) => r.value === household.annual_mortgage_rate)?.id : undefined;
+                setProv((p) => ({ ...p, [`household.${key}`]: sourceId ? { kind, source_id: sourceId } : { kind } }));
               }}
             />
           ) : (
-            <p className="muted">Loading case study…</p>
+            <p className="muted">Loading project…</p>
           )}
         </section>
 
         <section className="panel scene-placeholder">
           <h2>3D concept view</h2>
-          <p className="muted">Conceptual model — no zoning/site verification. (Milestone 6)</p>
+          {project?.site?.buildings ? (
+            <p className="muted">
+              {project.site.buildings} buildings × {project.site.units_per_building} homes — conceptual 3D visualization, not to
+              scale. (Milestone 6)
+            </p>
+          ) : (
+            <p className="muted">Conceptual model — no zoning/site verification. (Milestone 6)</p>
+          )}
         </section>
 
         <section className="panel">
@@ -128,28 +282,27 @@ export default function App() {
           <FinancialSummary analysis={analysis} stale={stale} />
         </section>
 
-        {caseStudy && (
+        {project && (
           <section className="panel wide">
-            <h2>Sources &amp; assumptions</h2>
+            <h2>Published references &amp; assumptions</h2>
+            {project.notes && <p className="small">{project.notes}</p>}
             <p className="small">
-              <strong>{caseStudy.name}</strong> — {caseStudy.location} ({caseStudy.case_type}). {caseStudy.notes}
-            </p>
-            <p className="small">
-              The reference sources below are <strong>not</strong> verification of the demo values.
+              These references are <strong>not</strong> verification of the modeled values. <ProvenanceTag kind="assumption" />{" "}
+              marks made-up numbers.
             </p>
             <ul className="small">
-              {caseStudy.reference_links.map((l) => (
-                <li key={l.url}>
-                  <a href={l.url} target="_blank" rel="noreferrer">
-                    {l.title}
-                  </a>{" "}
-                  <span className="tag reference">Reference only</span>
-                  {(() => {
-                    const r = refs.find((x) => x.id === l.reference_source_id);
-                    return r ? <span className="muted"> — checked {r.checked_at}. {r.limitations}</span> : null;
-                  })()}
-                </li>
-              ))}
+              {project.reference_links.map((l) => {
+                const r = refs.find((x) => x.id === l.reference_source_id);
+                return (
+                  <li key={l.url}>
+                    <a href={l.url} target="_blank" rel="noreferrer">
+                      {l.title}
+                    </a>{" "}
+                    <span className="tag reference">Reference only</span>
+                    {r && <span className="muted"> — checked {r.checked_at}. {r.limitations}</span>}
+                  </li>
+                );
+              })}
             </ul>
           </section>
         )}

@@ -3,13 +3,17 @@
 **Lane 3 · Fund it** — *Does it pencil, and who closes the gap?*
 Claude Impact Lab: UCI × SoCal Affordable Housing.
 
-For a **nonprofit finance lead** (e.g. at Habitat for Humanity OC) screening a small 6/8/10-home
-ownership concept: household affordability → development cost → funding stack → remaining gap,
+For a **nonprofit finance lead** (e.g. at Habitat for Humanity OC) screening a small affordable-ownership
+project: household affordability → development cost → funding stack → remaining gap,
 with every number labeled as sourced, user-entered or `ASSUMPTION`.
 
 > Prototype for early-stage screening only — not legal, financial or lending advice.
 
-Spec: [`HomeForge_Official_Repo_Claude_Plan.md`](HomeForge_Official_Repo_Claude_Plan.md).
+Default demo: **Habitat OC — 1921 W. Washington Ave., Santa Ana** — a real, publicly documented
+six-home (three-duplex) project. Create your own projects from the project bar; the demo stays read-only.
+
+Spec: [`HomeForge_Official_Repo_Claude_Plan.md`](HomeForge_Official_Repo_Claude_Plan.md) ·
+case study: [`HomeForge_Santa_Ana_Case_Study.md`](HomeForge_Santa_Ana_Case_Study.md).
 
 ## Try it
 
@@ -34,9 +38,12 @@ Tests: `python -m pytest backend/tests -q` and `npm --prefix frontend run build`
 |---|---|
 | Freddie Mac PMMS 30-yr rate: 7.18% (2026-11-05), 7.40% (2026-10-08) | **Sourced** — read from [PMMS_history.csv](https://www.freddiemac.com/pmms/docs/PMMS_history.csv), checked 2026-11-07 |
 | HCD 2026 State Income Limits, Orange County row (revised 2026-06-23), AMI $138,600 | **Sourced** — [PDF](https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf) p.11, checked 2026-11-07. Shown as eligibility reference only |
+| Santa Ana site: address, APN 405-101-37, ~0.37 acre, 3 duplexes / 6 homes, 10,882 sq ft total new floor area, 15 parking spaces, <80% AMI target | **Documented** — [Resolution 2024-10](https://publicdocs.santa-ana.org/WebLink/1/edoc/221637/Reso24-10_1921%20W.%20Washington%20Ave.pdf) (adopted 2024-06-10), read 2026-11-07 |
+| City Inclusionary Grant **up to** $2,200,000 (conditional), 45-year affordability covenant | **Documented** — [Resolution 2024-11](https://publicdocs.santa-ana.org/WebLink/1/edoc/221638/Reso24-11_1921%20W.%20Washington%20Ave%28DBA%29.pdf). Amount disbursed is UNKNOWN; the app uses a modeled allocation you set |
+| Santa Ana actual development cost, land cost, sale prices, parcel geometry | **UNKNOWN** — not guessed |
 | Household income $100K, 33% housing-cost ratio, 7% default rate, $550/mo taxes/ins/HOA, $15K buyer cash | `ASSUMPTION` |
 | Land, site work, $/sq ft, soft/contingency/financing rates, site capacity, subsidy cap | `ASSUMPTION` |
-| $500K city grant, $300K donor pledge ("committed") | `ASSUMPTION` — hypothetical; no real award |
+| Illustrative 6/8/10 concept project: $500K city grant, $300K donor pledge ("committed") | `ASSUMPTION` — hypothetical; no real award (backs the numeric test oracle) |
 | CalHome, HOME, SHOP, CalHFA | Candidate programs — unconfirmed; never counted in the gap |
 | Organizer synthetic one-home deal ($535K / $95K gap) | SYNTHETIC test fixture only |
 

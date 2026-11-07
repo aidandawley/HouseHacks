@@ -52,3 +52,14 @@ details summary { cursor: pointer; font-size: 12px; color: #52606d; margin-botto
 table.il { border-collapse: collapse; font-size: 11px; width: 100%; }
 table.il td { padding: 1px 4px; border-bottom: 1px solid #eef1f4; }
 table.il td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.tag.unknown { background: #eceff1; color: #455a64; border: 1px dashed #90a4ae; }
+.projectbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 20px; background: #e8eef5; border-bottom: 1px solid #cfd9e3; font-size: 13px; }
+.projectbar select { padding: 4px 6px; border-radius: 6px; border: 1px solid #9aa5b1; min-width: 280px; }
+.projectbar .dirty { color: #9b5c00; font-weight: 600; }
+.projectbar .spacer { flex: 1; }
+.facts { width: 100%; border-collapse: collapse; font-size: 12px; }
+.facts td { padding: 4px 6px; border-bottom: 1px solid #eef1f4; vertical-align: top; }
+.facts td.v { font-weight: 600; }
+.facts .note { display: block; font-weight: 400; color: #7b8794; font-size: 11px; }
+.project-head { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.project-head h1 { font-size: 18px; margin: 0; color: #12355b; }
