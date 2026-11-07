@@ -49,6 +49,26 @@ export interface ReferenceLink {
   title: string;
   url: string;
   usage: "reference_only";
+  reference_source_id?: string;
+}
+
+export interface ReferenceSource {
+  id: string;
+  name: string;
+  source_url: string;
+  landing_url?: string;
+  checked_at: string;
+  effective_date?: string;
+  source_kind: "published_rate" | "published_income_limit" | "statute" | "cost_study" | "candidate_program";
+  verification_status: "team_verified" | "organizer_verified_page" | "unverified";
+  limitations: string;
+  value?: number;
+  unit?: string;
+  page?: number;
+  table?: string;
+  household_sizes?: number[];
+  limits?: Record<string, number[]>;
+  area_median_income_4_person?: number;
 }
 
 export interface CaseStudy {
@@ -64,6 +84,7 @@ export interface CaseStudy {
   development: DevelopmentInputs;
   funding_sources: FundingSource[];
   notes: string;
+  reference_sources: { about: string; records: ReferenceSource[] };
 }
 
 export interface CompareRequest {
@@ -73,12 +94,28 @@ export interface CompareRequest {
   funding_sources: FundingSource[];
 }
 
-// Milestone 1: compare returns a validation acknowledgement only.
-// Full response shape (affordability, funding, scenarios...) lands in milestones 2-3.
+export interface AffordabilityResult {
+  monthly_housing_budget: number;
+  monthly_principal_interest_available: number;
+  mortgage_principal: number;
+  affordable_sale_price_per_home: number;
+  affordability_valid: boolean;
+}
+
+// Grows in milestone 3 (funding, scenarios, recommendation).
 export interface CompareResponse {
   engine_status?: string;
-  message?: string;
+  affordability: AffordabilityResult;
   candidate_home_counts: number[];
   case_type: string;
-  [key: string]: unknown;
+  warnings: string[];
 }
+
+/** Provenance label shown next to every figure. */
+export type Provenance =
+  | "assumption"
+  | "user"
+  | "published_rate"
+  | "published_income_limit"
+  | "candidate"
+  | "computed";

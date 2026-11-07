@@ -3,14 +3,44 @@
   "name": "Orange County affordable-homeownership concept",
   "location": "Santa Ana, California",
   "case_type": "illustrative",
-  "candidate_home_counts": [6, 8, 10],
+  "candidate_home_counts": [
+    6,
+    8,
+    10
+  ],
   "verified_facts": {},
   "sources": [],
   "reference_links": [
-    {"title": "HCD income limits", "url": "https://www.hcd.ca.gov/grants-and-funding/income-limits", "usage": "reference_only"},
-    {"title": "Freddie Mac mortgage survey", "url": "https://www.freddiemac.com/pmms", "usage": "reference_only"},
-    {"title": "CalHome program", "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome-program", "usage": "reference_only"},
-    {"title": "CalHFA MyHome", "url": "https://www.calhfa.ca.gov/homebuyer/programs/myhome.htm", "usage": "reference_only"}
+    {
+      "title": "HCD 2026 State Income Limits (rev. 2026-06-23)",
+      "url": "https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf",
+      "usage": "reference_only",
+      "reference_source_id": "hcd-state-il-2026-orange"
+    },
+    {
+      "title": "Freddie Mac PMMS",
+      "url": "https://www.freddiemac.com/pmms",
+      "usage": "reference_only",
+      "reference_source_id": "pmms-30yr-2026-11-05"
+    },
+    {
+      "title": "CA Health & Safety Code §50052.5",
+      "url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=50052.5",
+      "usage": "reference_only",
+      "reference_source_id": "hsc-50052-5"
+    },
+    {
+      "title": "HCD CalHome",
+      "url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome",
+      "usage": "reference_only",
+      "reference_source_id": "calhome"
+    },
+    {
+      "title": "CalHFA homebuyer programs",
+      "url": "https://www.calhfa.ca.gov/homebuyer/programs/",
+      "usage": "reference_only",
+      "reference_source_id": "calhfa-homebuyer"
+    }
   ],
   "household": {
     "annual_income": 100000,
@@ -26,8 +56,8 @@
     "site_work_cost": 100000,
     "gross_sqft_per_home": 1100,
     "hard_cost_per_sqft": 300,
-    "soft_cost_rate": 0.20,
-    "contingency_rate": 0.10,
+    "soft_cost_rate": 0.2,
+    "contingency_rate": 0.1,
     "financing_rate": 0.05,
     "illustrative_site_capacity": 10,
     "additional_subsidy_budget": 900000
@@ -53,7 +83,7 @@
     },
     {
       "id": "calhome-reference",
-      "name": "CalHome — explore program rules",
+      "name": "CalHome — candidate program, unconfirmed",
       "amount": null,
       "status": "potential",
       "instrument": "development_grant",
@@ -61,5 +91,5 @@
       "source": null
     }
   ],
-  "notes": "Every dollar and ratio in this scenario is illustrative, including the modeled 'committed' funding rows. No real funding awards are implied."
+  "notes": "Every dollar and ratio in this scenario is an ASSUMPTION, including the modeled 'committed' funding rows and the 7% default mortgage rate. No real funding awards are implied. Published references (Freddie Mac rate, HCD income limits) are shown separately with their dates and are not the demo defaults."
 }

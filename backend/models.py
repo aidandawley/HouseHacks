@@ -8,9 +8,12 @@ from __future__ import annotations
 
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, PlainSerializer, field_validator, model_validator
+
+# Money/ratio outputs: exact Decimal in Python, plain JSON number on the wire.
+Money = Annotated[Decimal, PlainSerializer(float, return_type=float, when_used="json")]
 
 
 class _Strict(BaseModel):

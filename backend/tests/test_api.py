@@ -25,7 +25,17 @@ def test_case_study_includes_fixture_and_references():
     assert body["id"] == "homeforge-oc-illustrative-v2"
     assert body["case_type"] == "illustrative"
     assert body["candidate_home_counts"] == [6, 8, 10]
-    assert len(body["reference_links"]) == 4
+    assert len(body["reference_links"]) >= 4
+    refs = {r["id"]: r for r in body["reference_sources"]["records"]}
+    assert refs["pmms-30yr-2026-11-05"]["value"] == 0.0718
+    assert refs["pmms-30yr-2026-11-05"]["effective_date"] == "2026-11-05"
+    oc = refs["hcd-state-il-2026-orange"]
+    assert oc["effective_date"] == "2026-06-23" and oc["area_median_income_4_person"] == 138600
+    assert all(len(v) == 8 for v in oc["limits"].values())
+    # every linked reference resolves to a cached record
+    assert all(link["reference_source_id"] in refs for link in body["reference_links"])
+    # candidate programs carry no amount
+    assert all("value" not in r for r in refs.values() if r["source_kind"] == "candidate_program")
     assert all(link["usage"] == "reference_only" for link in body["reference_links"])
     assert {s["basis"] for s in body["funding_sources"]} <= {"illustrative_assumption", "reference_only"}
 
@@ -82,3 +92,13 @@ def test_compare_rejects_malformed_funding_rows():
     bad = copy.deepcopy(req)
     bad["funding_sources"][1]["id"] = bad["funding_sources"][0]["id"]
     assert client.post("/api/compare", json=bad).status_code == 422
+
+
+def test_reference_source_validation_rejects_unsourced_values():
+    from backend.provenance import validate_reference_sources
+
+    bad = {"records": [{"id": "x", "name": "x", "source_url": "https://e.org", "checked_at": "2026-11-07",
+                        "source_kind": "published_rate", "verification_status": "organizer_verified_page",
+                        "limitations": "", "value": 0.07}]}
+    with pytest.raises(ValueError):
+        validate_reference_sources(bad)

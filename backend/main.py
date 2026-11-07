@@ -1,9 +1,8 @@
 """HomeForge FastAPI app.
 
-Milestone 1 (skeleton): serves the case-study fixture and accepts/validates
-analysis requests. The affordability and development/gap engines are wired
-into POST /api/compare in milestones 2-3; until then the endpoint returns no
-financial figures at all rather than placeholder numbers.
+POST /api/compare currently returns backend-computed household affordability.
+Development cost / funding gap / scenarios are added in milestone 3; until
+then no placeholder figures are returned for them.
 """
 
 from __future__ import annotations
@@ -15,7 +14,9 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .affordability import calculate_affordability
 from .models import CompareRequest
+from .provenance import UI_LABELS, load_reference_sources
 
 DATA_PATH = Path(__file__).parent / "data" / "case_study.json"
 
@@ -46,16 +47,23 @@ def health() -> dict:
 
 @app.get("/api/case-study")
 def get_case_study() -> dict:
-    return load_case_study()
+    return {**load_case_study(), "reference_sources": load_reference_sources(), "ui_labels": UI_LABELS}
 
 
 @app.post("/api/compare")
 def compare(request: CompareRequest) -> dict:
-    # TODO(milestone 2-3): replace with affordability + finance + optimize engines.
+    affordability = calculate_affordability(request.household)
+    warnings = [
+        "Costs, buyer income, funding commitments, site capacity and mortgage inputs are "
+        "scenario assumptions; not verified Habitat project data."
+    ]
+    if affordability.warning:
+        warnings.append(affordability.warning)
+    # TODO(milestone 3): development cost, funding stack, gap and scenarios.
     return {
-        "engine_status": "not_implemented",
-        "message": "Request validated. Financial engines arrive in milestones 2-3; no figures are computed yet.",
+        "engine_status": "affordability_only",
+        "affordability": affordability.model_dump(mode="json", exclude={"warning"}),
         "candidate_home_counts": request.candidate_home_counts,
-        "funding_source_count": len(request.funding_sources),
         "case_type": "illustrative",
+        "warnings": warnings,
     }

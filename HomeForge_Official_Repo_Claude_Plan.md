@@ -1,4 +1,4 @@
-# HomeForge — Claude Code Implementation Plan (Fund It Brief-Aligned)
+# HomeForge — Claude Code Implementation Plan (Official UCI Impact Lab Repo + Fund It)
 
 > **Purpose:** Paste this Markdown file into the repository root and give it to Claude Code. It is an **implementation contract** for a five-hour Habitat for Humanity Orange County / Claude Impact Lab hackathon, not a brainstorming document.
 >
@@ -9,7 +9,10 @@
 ## Copy/paste kickoff prompt for Claude Code
 
 ```text
-Read HomeForge_Claude_Code_Implementation_Plan.md fully, then inspect the existing repository.
+Read HomeForge_Official_Repo_Claude_Plan.md fully, then inspect the existing repository.
+Use the official UCI challenge repository as the authoritative event reference:
+https://github.com/travcjohnson/claude-impact-lab-uci
+Read its CLAUDE.md, lanes/3-fund-it/README.md and data/DATA-SOURCES.md before coding.
 Build the P0 MVP in the order specified, using the exact stack, data shapes, math,
 and acceptance tests in the plan. Do not invent official program figures or pretend
 hypothetical financing is committed. Write working code, not just explanations.
@@ -21,6 +24,67 @@ Do not add P1/P2 or spend time on elaborate 3D effects until all P0 checks pass.
 If something is unclear, pick the simplest defensible implementation and note the
 assumption instead of blocking on design questions. Preserve existing work.
 ```
+
+---
+
+## START HERE: official challenge resources and how to use them
+
+**Authoritative event repository:** https://github.com/travcjohnson/claude-impact-lab-uci
+
+This is the organizer-provided participant repo, **not the HomeForge source code**. It includes the exact slides, challenge briefs, event instructions, curated data sources and a made-up worked example. Treat organizer-provided text as event guidance; treat financial figures as verified **only** when their underlying primary source is checked and cited.
+
+### Read these files in this order before implementing
+
+| Priority | Official file | What Claude Code must do with it |
+|---|---|---|
+| **P0** | [CLAUDE.md](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/CLAUDE.md) | Adopt the event-specific rules: no invented official numbers, source URLs and dates, assumption labels, no private buyer data, no secrets in Git, prototype disclaimer |
+| **P0** | [Fund It README](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/README.md) | Name a nonprofit finance lead as user; answer *Does it pencil, and who closes the gap?*; reflect 30–35% payment-ratio discussion only as contextual guidance, not a universal legal rule |
+| **P0** | [Fund It DATA-SOURCES.md](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/data/DATA-SOURCES.md) | Use its source inventory; distinguish VERIFIED (the page loaded when organizers checked), UNVERIFIED (lead), and [INFERRED] (untested hypothesis). Do not treat page availability as grant funding availability |
+| **P0** | [synthetic-example-deal.json](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/data/synthetic-example-deal.json) | Copy to `backend/tests/fixtures/official_synthetic_example_deal.json` **for math tests only**; never describe it as actual Habitat data |
+| **P0** | [scenarios.json](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/scenarios.json) | Verify three workflows: finance lead closes gap; interest rate changes affordability; donor asks what a gift funds |
+| **P0** | [judging.md](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/judging.md) | Optimize for Impact, Works, Scale, Innovation (equal weights; Impact tiebreaker). Show a source-backed input and assumptions on screen |
+| **P0** | [submission.md](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/submission.md) and [team README template](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/templates/TEAM-README.md) | Prepare public repo, try-it commands, mocked-vs-real note, 30s ideal / <=2min demo video, no keys, main branch checked |
+| Reference | [challenge-brief.pdf](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/challenge-brief.pdf) and [kickoff-slides.pdf](https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/kickoff-slides.pdf) | Authoritative slides and exact challenge wording |
+
+**Prefer the official repo's own `CLAUDE.md` if building from their template.** Don't overwrite that file; place this plan alongside it. If starting from a separate HomeForge repo, incorporate the event safety and provenance rules into your local instructions.
+
+### Exact sources to use in P0 (not just link in README)
+
+1. **2026 California HCD State Income Limits**, revised June 23, 2026: https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf — get the **Orange County row**, record household size, income category and revision date. The HCD State HOME PDF is **separate** and effective June 1, 2026: https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/2026-california-HOME-income-limits_0.pdf. **Do not interchange State, State HOME or HUD income tables.** If an exact row cannot be verified, disable that official preset and use a clearly labeled example income; never invent a value.
+2. **Freddie Mac 30-year rate**, https://www.freddiemac.com/pmms and its [downloadable historical CSV](https://www.freddiemac.com/pmms/docs/PMMS_history.csv). Organizers' source list reports **7.18% on November 5, 2026**. Cache the observed rate and date as a baseline; make it adjustable; state that conventional PMMS rates may not match Habitat mortgages.
+3. **California Health and Safety Code §50052.5**, https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=50052.5 — ownership affordable-cost context. Do **not** label the MVP's simplified `income * assumed payment ratio` model as statutory-compliant underwriting without verifying the detailed applicable formula; keep the 30–35% setting explicitly an `ASSUMPTION`. **§50053 covers rental**, not ownership.
+4. **Terner Center hard construction costs** (March 2020), https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Hard_Construction_Costs_March_2020.pdf. Useful for historical context, **not an automatically valid 2026 Orange County per-square-foot figure**. Use a labeled editable `ASSUMPTION` if no defensible updated cost estimate is available.
+5. **Funding-program references:** [CalHome](https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome), [HCD HOME](https://www.hcd.ca.gov/grants-and-funding/programs-active/home-investment-partnerships-program), [HUD SHOP](https://www.hudexchange.info/programs/shop/), and [CalHFA homebuyer programs](https://www.calhfa.ca.gov/homebuyer/programs/). Start as **candidate source references only**; do not subtract any program amount from the development funding gap unless clearly modeled as **hypothetical assumed commitment**. Buyer loans/down-payment assistance are **not identical to development grants**; avoid double counting.
+6. **Optional real-world Orange County site context:** use a publicly documented listing or project with independently verified address/area/units. The official Fund It repo provides links and synthetic test fixtures, **not a verified full Habitat development pro forma**. If you lack one, don't claim the demo's project-cost inputs are real.
+
+### What to ingest now; what to keep out of scope
+
+**P0 source ingestion path:**
+
+```bash
+# Run in a scratch/reference directory or inspect links in a browser.
+# The organizer repo is a reference, not a replacement for your team's code repo.
+git clone --depth 1 https://github.com/travcjohnson/claude-impact-lab-uci.git /tmp/uci-impact-lab-reference
+mkdir -p backend/tests/fixtures
+cp /tmp/uci-impact-lab-reference/lanes/3-fund-it/data/synthetic-example-deal.json backend/tests/fixtures/official_synthetic_example_deal.json
+```
+
+**P0 parsing and provenance:** Create `backend/data/reference_sources.json` containing records of `name`, `source_url`, `checked_at`, `effective_date` (when present), `source_kind`, `verification_status`, `limitations`, and optionally extracted `value` and `unit`. Cache and validate exactly the official income-limit row and weekly mortgage-rate observation you display; store the original source links. Don't fetch entire websites on each slider movement; deterministic formulas operate on cached/user inputs. On-screen labels should say **Official published rate**, **Published income-limit reference**, **User-entered**, **ASSUMPTION**, or **Candidate program — unconfirmed**, as appropriate. Cite sources next to inputs/results, not just in an About page.
+
+**P0 unit test against organizer's synthetic example:** Assert total cost `360000 + 85000 + 40000 + 50000 = 535000`; sources excluding fundraising `285000 + 100000 + 55000 = 440000`; residual fundraising required `535000 - 440000 = 95000`; fully balanced `285000 + 100000 + 55000 + 95000 - 535000 = 0`. Keep this **single-home synthetic example** as a separate test fixture; do not silently replace the project's existing 6/8/10-home test oracle or treat the example's rent-while-waiting as a universal new-build revenue line.
+
+**P0 scenario checks:**
+- `M01`: change assumed development subsidy and show gap recalculation, while candidate grants remain excluded from committed totals.
+- `M02`: increase/decrease the published-reference mortgage rate and show the exact change in estimated affordable principal, home price and gap.
+- `M03`: model a $25,000 **hypothetical** donor gift and show the remaining funding gap, with no fabricated donation commitment.
+
+**P1 only:** Automated Claude extraction from official PDFs and program documents, Claude explanation panel, program eligibility rule interpretation, 3D transition polish, rich grant-search experience. The app must have a reliable demo if the Claude API is offline.
+
+### Event timing and submission (corrected from generic five-hour estimate)
+
+The organizers specify **10:00 AM to 2:30 PM** for breakout-room building and submissions **due at 2:30 PM**, i.e. approximately **4.5 hours of actual build window**. Do not spend the last 30 minutes starting features. Dedicate it to the README, video upload, final public repo check and form submission. The official README says the video should ideally be 30 seconds and can be up to two minutes. All code must be pushed to `main` before the deadline, and a public main branch plus repeatable commands and small demo data must be available to judges.
+
+**Recommended compressed schedule:** `10:00–10:25` official sources + scaffold; `10:25–11:45` financial engine and API tests; `11:45–12:40` funding builder and real sourced rate/income context; `12:40–1:30` 3D and scenario comparison; `1:30–2:00` verification and optional Claude explanation; `2:00–2:30` README/video/repo/submission. If a stage slips, cut P1 entirely.
 
 ---
 
@@ -107,7 +171,7 @@ Not a real Habitat budget, lender commitment, grant award, architectural plan, z
 
 ```text
 homeforge/
-├── HomeForge_Claude_Code_Implementation_Plan.md
+├── HomeForge_Official_Repo_Claude_Plan.md
 ├── README.md
 ├── .gitignore
 ├── .env.example                  # P1 only: ANTHROPIC_API_KEY=, ANTHROPIC_MODEL=
@@ -655,19 +719,19 @@ Do not claim tests passed unless actually executed and successful.
 
 ---
 
-## 12. Five-hour execution plan and team split
+## 12. Execution plan and team split (4.5-hour event window)
 
 **Suggested owners if three people:** **A** = backend calculations/API/tests; **B** = frontend/3D; **C** = public-source research, provenance/funding UI, end-to-end verification/demo. With two people: A owns backend, B owns frontend, both share research and pitch.
 
-| Time | Backend / data | Frontend / integration | Exit gate |
+| Event time | Backend / data | Frontend / integration | Exit gate |
 |---|---|---|---|
-| **0:00–0:30** | Scaffold; load JSON; Pydantic models; API request contract | Layout shell; fetch defaults; install R3F | Servers run; JSON loads |
-| **0:30–1:20** | Affordability formula + exact tests | Income controls, price KPI, API wiring | Income -> **backend price** works |
-| **1:20–2:10** | TDC, funding rows, gap, 6/8/10 compare + tests | TDC/gap cards, funding stack editor | Funding toggle -> **correct gap change** |
-| **2:10–2:50** | Recommendation + edge cases | 3D houses + scenario selector + reset | End-to-end **P0 demo** working |
-| **2:50–3:40** | Regression tests, validation, source review | Sources panel, compare table, responsive errors | **P0 frozen**; tests + build pass |
-| **3:40–4:20** | **Only if P0 stable:** Claude explanations / verified program references | Modest visual polish and scene transitions | AI optional; P0 still independent |
-| **4:20–5:00** | No new features; fix bugs; README; demo backup | Rehearse 90-second pitch twice | Reliable judge demo |
+| **10:00–10:25** | Read official repo instructions, source status, fixture; scaffold API | Scaffold layout and R3F; confirm both servers start | Endpoints and UI shell work |
+| **10:25–11:10** | Pure affordability math + tests; cache published PMMS reference | Income/rate controls, price KPI | Income and rate drive backend-calculated ceiling |
+| **11:10–11:45** | TDC, funding gap and organizer synthetic fixture tests | Funding stack editing and gap display | Synthetic $95K example test passes; funding toggle works |
+| **11:45–12:40** | 6/8/10 comparisons, deterministic recommendation, provenance | Comparison table, source labels, API integration | End-to-end calculations work; values clearly attributed |
+| **12:40–1:30** | Edge cases, test suite | Procedural 3D scene and reset | 6/8/10 scenes show exact counts |
+| **1:30–2:00** | Verify real source baseline, run tests, documentation; **only if stable** add Claude explanation | Bug fixes and minimal visual polish | P0 frozen; repeatable live demo |
+| **2:00–2:30** | Public `main` repo, README with commands, source notes, submission form | Record 30-second demo video and final rehearsal | **Submission complete before 2:30 PM** |
 
 ### Stop/cut rules
 
@@ -675,7 +739,7 @@ Do not claim tests passed unless actually executed and successful.
 - **3D rendering bug?** Show simple procedural boxes; count must still be accurate.
 - **Cannot verify HCD income-limit figures?** Use the illustrative income input and a citation to the general source only as reference; no fabricated table.
 - **No real project budget?** Keep a publicly contextualized but **illustrative** scenario, plainly labeled.
-- **Final hour:** Stop feature work. Test, stabilize, document, and rehearse.
+- **Final 30 minutes before 2:30 PM:** Stop feature work. Test, document, record/upload demo video, and submit.
 
 ---
 
@@ -694,6 +758,14 @@ Do not claim tests passed unless actually executed and successful.
 ---
 
 ## 14. Final P0 acceptance checklist
+
+**Official-source gates**
+- [ ] Code follows the organizer repo `CLAUDE.md` and ground rules.
+- [ ] Organizer synthetic deal test passes ($535K cost / $95K residual funding gap), labeled **SYNTHETIC**.
+- [ ] At least one real source-backed input is visible with a URL and a date; use dated Freddie Mac rate and, if verified, Orange County income-limit row.
+- [ ] Published income limits vs modeled mortgage affordability are clearly distinguished; simplified 30–35% affordability model does **not** assert legal compliance.
+- [ ] Public GitHub `main` branch, no secrets, try-it instructions, labeled demo data, and video prepared before 2:30 PM.
+
 
 - [ ] App opens and calls backend successfully; defaults load from `case_study.json`.
 - [ ] Annual income -> mortgage -> **price ceiling** calculation is real backend code.
@@ -720,3 +792,17 @@ After every implementation milestone, report briefly:
 4. **Next:** the single highest-priority action.
 
 **Final instruction:** Build a credible **affordability -> cost -> funding stack -> gap -> 3D decision** experience. The goal isn't merely to show that Claude can write a frontend; it's to give Habitat's finance and development teams a transparent way to reason about **what makes affordable housing pencil out and which money could close the gap**.
+
+---
+
+## Official GitHub reference links (copy into your team's README)
+
+- Participant repo: https://github.com/travcjohnson/claude-impact-lab-uci
+- Fund It brief: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/README.md
+- Funding/income/rate source inventory: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/data/DATA-SOURCES.md
+- Official synthetic test deal: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/data/synthetic-example-deal.json
+- Official use-case scenarios: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/lanes/3-fund-it/scenarios.json
+- Event ground rules: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/ground-rules.md
+- Submission requirements: https://github.com/travcjohnson/claude-impact-lab-uci/blob/main/docs/submission.md
+
+**Provenance note:** Organizer source-catalog statuses were checked November 6, 2026 by its authors; the team must recheck specific published values or eligibility terms before marking a live datum VERIFIED. Financial and eligibility interpretations are for prototype screening, not advice.

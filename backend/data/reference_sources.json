@@ -1,0 +1,128 @@
+{
+  "about": "Cached official reference data for HomeForge. Values marked team_verified were read by the team directly from the downloaded source file on checked_at. Everything else is a reference link only: page availability is not funding availability, and no program amount here is counted in any gap.",
+  "verification_status_key": {
+    "team_verified": "Team downloaded the source on checked_at and read the value itself.",
+    "organizer_verified_page": "Listed VERIFIED in the organizers' Fund It DATA-SOURCES.md (page loaded on 2026-11-06). Contents/terms not checked by the team.",
+    "unverified": "Lead only. Not confirmed."
+  },
+  "records": [
+    {
+      "id": "pmms-30yr-2026-11-05",
+      "name": "Freddie Mac PMMS 30-year fixed rate, week of 2026-11-05",
+      "source_url": "https://www.freddiemac.com/pmms/docs/PMMS_history.csv",
+      "landing_url": "https://www.freddiemac.com/pmms",
+      "checked_at": "2026-11-07",
+      "effective_date": "2026-11-05",
+      "source_kind": "published_rate",
+      "verification_status": "team_verified",
+      "value": 0.0718,
+      "unit": "annual_rate",
+      "extraction": "PMMS_history.csv row '11/5/2026,7.18,...' column pmms30 (sha256 a1cc5ac7186abe7f1118f7b5bd95ea192594f8f23e65ef5dc31d153d195f6170). Matches organizers' DATA-SOURCES.md (7.18% on 2026-11-05).",
+      "limitations": "National average for conventional conforming 30-year loans. Habitat/nonprofit mortgages, CalHFA loans and individual buyer rates can differ substantially. Weekly survey; re-check before relying on it."
+    },
+    {
+      "id": "pmms-30yr-2026-10-08",
+      "name": "Freddie Mac PMMS 30-year fixed rate, week of 2026-10-08",
+      "source_url": "https://www.freddiemac.com/pmms/docs/PMMS_history.csv",
+      "landing_url": "https://www.freddiemac.com/pmms",
+      "checked_at": "2026-11-07",
+      "effective_date": "2026-10-08",
+      "source_kind": "published_rate",
+      "verification_status": "team_verified",
+      "value": 0.074,
+      "unit": "annual_rate",
+      "extraction": "PMMS_history.csv row '10/8/2026,7.4,...' column pmms30. Matches organizers' DATA-SOURCES.md (7.40% on 2026-10-08).",
+      "limitations": "Same as the 2026-11-05 observation. Shown only to illustrate one month of rate movement (scenario M02)."
+    },
+    {
+      "id": "hcd-state-il-2026-orange",
+      "name": "HCD 2026 State Income Limits (revised June 23, 2026) — Orange County",
+      "source_url": "https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/income-limits-2026.pdf",
+      "landing_url": "https://www.hcd.ca.gov/grants-and-funding/income-limits",
+      "checked_at": "2026-11-07",
+      "effective_date": "2026-06-23",
+      "source_kind": "published_income_limit",
+      "verification_status": "team_verified",
+      "table": "State Income Limits (NOT State HOME, NOT HUD)",
+      "page": 11,
+      "area_median_income_4_person": 138600,
+      "unit": "annual_household_income_usd",
+      "household_sizes": [1, 2, 3, 4, 5, 6, 7, 8],
+      "limits": {
+        "acutely_low": [14550, 16650, 18700, 20800, 22450, 24150, 25800, 27450],
+        "extremely_low": [39100, 44700, 50300, 55850, 60350, 64800, 69300, 73750],
+        "very_low": [65150, 74450, 83750, 93050, 100500, 107950, 115400, 122850],
+        "low": [104200, 119100, 134000, 148850, 160800, 172700, 184600, 196500],
+        "median": [97000, 110900, 124750, 138600, 149700, 160800, 171850, 182950],
+        "moderate": [116400, 133050, 149650, 166300, 179600, 192900, 206200, 219500]
+      },
+      "extraction": "Text-extracted from PDF page 11 (sha256 578d4611ef87baee30f349ccc2b123a622e556168e864c7d1289e45cbaa5013b). Row block matched to Orange County because its 4-person median equals the printed 'Orange County Area Median Income: $138,600'; all other counties on the page match the same way. Re-check visually on page 11 before a demo.",
+      "limitations": "State Income Limits apply only to designated programs and are subject to each program's definition of income, family size and effective dates (per the HCD memo). In Orange County the published Low Income limit exceeds the Median row; that is how the table reads, not a parsing error to 'fix'. These limits are eligibility thresholds, not what a household can afford to pay. The State HOME table (effective 2026-06-01) is a separate PDF and was not read."
+    },
+    {
+      "id": "hcd-state-home-il-2026",
+      "name": "HCD 2026 State HOME Income Limits (effective June 1, 2026)",
+      "source_url": "https://www.hcd.ca.gov/sites/default/files/docs/grants-and-funding/2026-california-HOME-income-limits_0.pdf",
+      "checked_at": "2026-11-06",
+      "effective_date": "2026-06-01",
+      "source_kind": "published_income_limit",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Separate table from State Income Limits. Not read by the team; do not interchange."
+    },
+    {
+      "id": "hsc-50052-5",
+      "name": "California Health and Safety Code §50052.5 (affordable housing cost, ownership)",
+      "source_url": "https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=HSC&sectionNum=50052.5",
+      "checked_at": "2026-11-06",
+      "source_kind": "statute",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Context only. HomeForge's income x housing-cost-ratio model is an ASSUMPTION and is NOT the statutory formula; it does not assert legal compliance. §50053 is the rental definition and is not used."
+    },
+    {
+      "id": "terner-hard-costs-2020",
+      "name": "Terner Center: Hard Construction Costs (March 2020)",
+      "source_url": "https://ternercenter.berkeley.edu/wp-content/uploads/2020/08/Hard_Construction_Costs_March_2020.pdf",
+      "checked_at": "2026-11-06",
+      "effective_date": "2020-03",
+      "source_kind": "cost_study",
+      "verification_status": "organizer_verified_page",
+      "limitations": "2020 data, not a 2026 Orange County per-square-foot figure. HomeForge's hard cost per sq ft is an ASSUMPTION, not taken from this paper."
+    },
+    {
+      "id": "calhome",
+      "name": "HCD CalHome",
+      "source_url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/calhome",
+      "checked_at": "2026-11-06",
+      "source_kind": "candidate_program",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Candidate program — unconfirmed. Eligibility, award size, round timing and availability of funds not checked. Never counted in the gap."
+    },
+    {
+      "id": "hcd-home",
+      "name": "HCD HOME Investment Partnerships Program",
+      "source_url": "https://www.hcd.ca.gov/grants-and-funding/programs-active/home-investment-partnerships-program",
+      "checked_at": "2026-11-06",
+      "source_kind": "candidate_program",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Candidate program — unconfirmed. Uses the State HOME income table, not State Income Limits. Never counted in the gap."
+    },
+    {
+      "id": "hud-shop",
+      "name": "HUD Self-Help Homeownership Opportunity Program (SHOP)",
+      "source_url": "https://www.hudexchange.info/programs/shop/",
+      "checked_at": "2026-11-06",
+      "source_kind": "candidate_program",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Candidate program — unconfirmed. Funds land and infrastructure for sweat-equity builders, not whole-home costs. Never counted in the gap."
+    },
+    {
+      "id": "calhfa-homebuyer",
+      "name": "CalHFA homebuyer programs (MyHome, etc.)",
+      "source_url": "https://www.calhfa.ca.gov/homebuyer/programs/",
+      "checked_at": "2026-11-06",
+      "source_kind": "candidate_program",
+      "verification_status": "organizer_verified_page",
+      "limitations": "Buyer assistance, not a developer grant. Would raise what a buyer can pay, so it must not also be subtracted from the development gap. Never counted in the gap."
+    }
+  ]
+}
