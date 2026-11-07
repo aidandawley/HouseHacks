@@ -109,13 +109,13 @@
       },
       {
         "key": "city_grant_max",
-        "label": "City Inclusionary Grant (conditional)",
+        "label": "City conditional grant (agreement)",
         "value": 2200000,
         "unit": "USD, up to",
         "status": "DOCUMENTED",
         "source_id": "sa-reso-2024-11",
         "page": 1,
-        "note": "Ceiling of a Conditional Grant Agreement. Not cash disbursed, not project cost, not the gap."
+        "note": "Resolution recites a Conditional Grant Agreement: City agreed to a grant of up to this amount. A ceiling — not cash disbursed, not project cost, not the gap."
       },
       {
         "key": "grant_condition",
@@ -263,9 +263,9 @@
   "default_home_count": 6,
   "documented_home_count": 6,
   "scenario_labels": {
-    "4": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED",
+    "4": "UNAPPROVED WHAT-IF — fewer than the 6 approved homes",
     "6": "DOCUMENTED configuration (Resolution 2024-10)",
-    "8": "UNAPPROVED CONCEPT / NOT ZONING-VALIDATED — exceeds approved count"
+    "8": "UNAPPROVED WHAT-IF — exceeds the 6 homes approved in Reso 2024-10"
   },
   "household": {
     "annual_income": 100000,
@@ -290,7 +290,7 @@
   "funding_sources": [
     {
       "id": "santa-ana-inclusionary-grant",
-      "name": "City of Santa Ana Inclusionary Grant — modeled allocation",
+      "name": "City of Santa Ana conditional grant — your modeled amount",
       "amount": 0,
       "documented_max": 2200000,
       "status": "conditional",
@@ -302,7 +302,7 @@
         "url": "https://publicdocs.santa-ana.org/WebLink/1/edoc/221638/Reso24-11_1921%20W.%20Washington%20Ave%28DBA%29.pdf",
         "publication_date": "2024-06-10",
         "page_or_section": "PDF p.1, Section 1(E)",
-        "fact_supported": "Conditional grant of up to $2,200,000 (ceiling only; disbursement unknown)"
+        "fact_supported": "Resolution 2024-11 recites a Conditional Grant Agreement under which the City agreed to provide a grant of up to $2,200,000 (ceiling only; disbursement UNKNOWN)"
       }
     },
     {
@@ -327,7 +327,7 @@
   "input_provenance": {
     "household.annual_income": {
       "kind": "assumption",
-      "note": "Hypothetical household. Below the published OC 4-person Low Income limit ($148,850), consistent with the documented <80% AMI target, but not an HCD figure."
+      "note": "Hypothetical household. $100,000 is below 80% of the published OC 4-person median ($138,600 × 0.8 = $110,880) and below HCD's published 4-person Low Income limit ($148,850). Not an HCD figure."
     },
     "household.household_size": {
       "kind": "assumption"
@@ -359,7 +359,7 @@
     "development.gross_sqft_per_home": {
       "kind": "derived",
       "source_id": "sa-reso-2024-10",
-      "note": "10,882 sq ft total new floor area ÷ 6 homes."
+      "note": "10,882 sq ft documented total new floor area (Reso 2024-10 p.1) ÷ 6 homes. Held constant for 4/8-home what-ifs, so 8 homes models ~14,509 sq ft."
     },
     "development.hard_cost_per_sqft": {
       "kind": "assumption",
@@ -377,10 +377,11 @@
     "development.illustrative_site_capacity": {
       "kind": "documented",
       "source_id": "sa-reso-2024-10",
-      "note": "6 homes approved; more is not verified buildable."
+      "note": "6 homes approved (Resolution 2024-10, PDF p.1). Counts above 6 are unapproved what-ifs."
     },
     "development.additional_subsidy_budget": {
-      "kind": "assumption"
+      "kind": "assumption",
+      "note": "How much additional funding you assume could be raised. A comparison line only — never subtracted from the gap."
     }
   },
   "verified_facts": {},

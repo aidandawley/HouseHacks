@@ -45,8 +45,9 @@ export function SiteFacts({ project }: { project: Project }) {
                 <td className="small">
                   {src ? (
                     <a href={src.url} target="_blank" rel="noreferrer" title={src.note ?? undefined}>
-                      {src.title.replace(/ \(.*\)$/, "")}
+                      {src.title.replace(/ \(.*\)$/, "").replace("Planning Commission Resolution No.", "PC Reso")}
                       {f.page ? `, p.${f.page}` : ""}
+                      {src.published ? ` · adopted ${src.published}` : ""}
                     </a>
                   ) : (
                     "—"

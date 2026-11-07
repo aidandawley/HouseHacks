@@ -9,7 +9,7 @@ import { Edges, Html, Line, OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { fmtUsd0 } from "../format";
+import { fmtCompact } from "../format";
 import type { ScenarioResult } from "../types";
 
 // ------------------------------------------------------------------ dimensions (schematic "meters")
@@ -56,7 +56,6 @@ interface Props {
   streetName: string | null;
   siteLabel: string;
   scenario: ScenarioResult | null;
-  priceCeiling: number | null;
   stale: boolean;
 }
 
@@ -238,10 +237,11 @@ interface UnitProps {
   roofGeo: THREE.ExtrudeGeometry;
   hovered: boolean;
   onHover: (i: number | null) => void;
+  onClick: (i: number) => void;
   tooltip: ReactNode;
 }
 
-function Unit({ slot, mode, bands, roofGeo, hovered, onHover, tooltip }: UnitProps) {
+function Unit({ slot, mode, bands, roofGeo, hovered, onHover, onClick, tooltip }: UnitProps) {
   const group = useRef<THREE.Group>(null);
   // Grow in on mount / when the slot becomes active.
   useFrame(() => {
@@ -273,6 +273,10 @@ function Unit({ slot, mode, bands, roofGeo, hovered, onHover, tooltip }: UnitPro
       onPointerOut={() => {
         onHover(null);
         document.body.style.cursor = "";
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick(slot.index);
       }}
     >
       <Walls status={slot.status} mode={mode} bands={bands} />
@@ -426,9 +430,12 @@ function CameraFit({ width, depth, cx, cz, version }: { width: number; depth: nu
 
 // ------------------------------------------------------------------ scene
 
-export default function HousingScene({ homes, documentedHomes, parkingSpaces, streetName, siteLabel, scenario, priceCeiling, stale }: Props) {
-  const [mode, setMode] = useState<SceneMode>("homes");
-  const [hovered, setHovered] = useState<number | null>(null);
+export default function HousingScene({ homes, documentedHomes, parkingSpaces, streetName, siteLabel, scenario, stale }: Props) {
+  // Funding view first: it is the story (who pays for each home, and what's left).
+  const [mode, setMode] = useState<SceneMode>("funding");
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [pinned, setPinned] = useState<number | null>(null);
+  const hovered = hoverIdx ?? pinned;
   const layout = useMemo(() => computeLayout(homes, documentedHomes, parkingSpaces), [homes, documentedHomes, parkingSpaces]);
   const roofGeo = useRoofGeometry();
 
@@ -474,20 +481,34 @@ export default function HousingScene({ homes, documentedHomes, parkingSpaces, st
     return t;
   }, [minX, maxX, minZ, maxZ]);
 
-  const tooltipFor = (u: UnitSlot) => (
-    <>
-      <strong>Home {u.index + 1}</strong>{" "}
-      {u.status === "built" ? (documentedHomes !== null ? "· documented" : "") : u.status === "whatif" ? "· what-if (unapproved)" : "· not in this scenario"}
-      {u.status !== "removed" && scenario && (
-        <>
-          <br />
-          Price ceiling {priceCeiling !== null ? fmtUsd0(priceCeiling) : "—"}
-          <br />
-          Gap / home {fmtUsd0(scenario.gap_per_home)}
-        </>
-      )}
-    </>
-  );
+  const tooltipFor = (u: UnitSlot) => {
+    const status =
+      u.status === "built" ? (documentedHomes !== null ? "documented home" : "modeled home") : u.status === "whatif" ? "what-if (unapproved)" : "not in this scenario";
+    const ph = scenario?.per_home;
+    return (
+      <>
+        <strong>Home {u.index + 1}</strong> · {status}
+        {u.status !== "removed" && ph && (
+          <>
+            <br />
+            Modeled cost ≈ {fmtCompact(ph.total_cost)}
+            <br />
+            <span className="tip-swatch" style={{ background: COLORS.proceeds }} /> Family pays ≈ {fmtCompact(ph.family_pays)}
+            {ph.counted_funding > 0 && (
+              <>
+                <br />
+                <span className="tip-swatch" style={{ background: COLORS.funding }} /> Counted funding ≈ {fmtCompact(ph.counted_funding)}
+              </>
+            )}
+            <br />
+            <span className="tip-swatch" style={{ background: COLORS.gap }} /> Still to raise ≈ {fmtCompact(ph.gap)}
+            <br />
+            <span className="tip-note">modeled from assumptions · click to pin</span>
+          </>
+        )}
+      </>
+    );
+  };
 
   return (
     <div className={`scene-wrap${stale ? " stale" : ""}`}>
@@ -566,7 +587,8 @@ export default function HousingScene({ homes, documentedHomes, parkingSpaces, st
             bands={bands}
             roofGeo={roofGeo}
             hovered={hovered === u.index}
-            onHover={setHovered}
+            onHover={setHoverIdx}
+            onClick={(i) => setPinned((p) => (p === i ? null : i))}
             tooltip={tooltipFor(u)}
           />
         ))}
@@ -619,13 +641,13 @@ export default function HousingScene({ homes, documentedHomes, parkingSpaces, st
           </>
         ) : (
           <>
-            <span><i style={{ background: COLORS.proceeds }} /> Sale proceeds</span>
-            <span><i style={{ background: COLORS.funding }} /> Counted funding</span>
-            <span><i style={{ background: COLORS.gap }} /> Remaining gap</span>
-            <span className="muted">share of each home's modeled cost</span>
+            <span><i style={{ background: COLORS.proceeds }} /> What families pay</span>
+            {bands && bands.funding > 0 && <span><i style={{ background: COLORS.funding }} /> Counted grants & gifts</span>}
+            {bands && bands.gap > 0 && <span><i style={{ background: COLORS.gap }} /> Still to raise (modeled)</span>}
+            <span className="muted">how each home is paid for</span>
           </>
         )}
-        <span className="muted hint-right">drag to orbit · scroll to zoom · hover a home</span>
+        <span className="muted hint-right">drag to orbit · scroll to zoom · hover or click a home</span>
       </div>
     </div>
   );

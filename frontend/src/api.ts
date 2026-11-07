@@ -37,7 +37,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const fetchDefaultProject = () => request<Project>("/api/case-study");
 export const listProjects = () => request<ProjectSummary[]>("/api/projects");
 export const fetchProject = (id: string) => request<Project>(`/api/projects/${encodeURIComponent(id)}`);
-export const createProject = (body: { name: string; from_id?: string; inputs?: CompareRequest }) =>
+export const createProject = (body: {
+  name: string;
+  from_id?: string;
+  inputs?: CompareRequest;
+  location?: string;
+  candidate_home_counts?: number[];
+}) =>
   request<Project>("/api/projects", { method: "POST", body: JSON.stringify(body) });
 export const updateProject = (
   id: string,

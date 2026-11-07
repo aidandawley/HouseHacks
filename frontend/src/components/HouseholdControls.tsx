@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { fmtPct, fmtUsd0 } from "../format";
 import type { HouseholdInputs, Provenance, ReferenceSource } from "../types";
+import { Field } from "./Field";
 import { ProvenanceTag } from "./ProvenanceTag";
 
 export type HouseholdKey = keyof HouseholdInputs;
@@ -15,32 +16,60 @@ interface FieldSpec {
   min: number;
   max?: number;
   slider?: { min: number; max: number; step: number };
+  prefix?: string;
+  suffix?: string;
   hint?: string;
 }
 
 const F = {
-  income: { key: "annual_income", label: "Annual household income ($)", step: 1000, min: 0, slider: { min: 30000, max: 200000, step: 1000 } },
+  income: {
+    key: "annual_income",
+    label: "Household income",
+    prefix: "$",
+    suffix: "/ yr",
+    step: 1000,
+    min: 0,
+    slider: { min: 30000, max: 200000, step: 1000 },
+  },
+  rate: {
+    key: "annual_mortgage_rate",
+    label: "Mortgage rate",
+    suffix: "%",
+    scale: 100,
+    step: 0.01,
+    min: 0,
+    max: 99,
+    hint: "Freddie Mac PMMS is a national average for conventional 30-year loans — not a Habitat or CalHFA buyer's rate.",
+  },
   ratio: {
     key: "housing_cost_ratio",
-    label: "Housing-cost ratio (% of income)",
+    label: "Share of income for housing",
+    suffix: "%",
     scale: 100,
     step: 0.5,
     min: 1,
     max: 100,
-    slider: { min: 25, max: 40, step: 0.5 },
     hint: "ASSUMPTION. The organizers cite ~30–35% as guidance. This simplified model is not the HSC §50052.5 formula and does not assert legal compliance.",
   },
-  rate: { key: "annual_mortgage_rate", label: "Mortgage rate (% APR)", scale: 100, step: 0.01, min: 0, max: 99 },
   other: {
     key: "other_housing_costs_monthly",
-    label: "Taxes / insurance / HOA ($/month)",
+    label: "Taxes, insurance & HOA",
+    prefix: "$",
+    suffix: "/ mo",
     step: 25,
     min: 0,
     hint: "ASSUMPTION: flat monthly estimate; no real property-tax calculation.",
   },
-  cash: { key: "buyer_cash_down_payment", label: "Buyer cash down payment ($)", step: 500, min: 0, hint: "Counted once, as part of the sale price." },
-  term: { key: "mortgage_term_years", label: "Mortgage term (years)", step: 1, min: 1, max: 50 },
-  size: { key: "household_size", label: "Household size", step: 1, min: 1, max: 8, hint: "Selects the income-limit reference row below." },
+  cash: {
+    key: "buyer_cash_down_payment",
+    label: "Buyer cash down payment",
+    prefix: "$",
+    step: 500,
+    min: 0,
+    hint: "Counted once, as part of the sale price — never again as project funding.",
+  },
+  term: { key: "mortgage_term_years", label: "Mortgage term", suffix: "years", step: 1, min: 1, max: 50 },
+  size: { key: "household_size", label: "Household size", suffix: "people", step: 1, min: 1, max: 8 },
 } satisfies Record<string, FieldSpec>;
 
 const LIMIT_LABELS: Record<string, string> = {
@@ -52,6 +81,8 @@ const LIMIT_LABELS: Record<string, string> = {
 };
 
 interface Props {
+  /** "essential" = sidebar basics; "advanced" = collapsed assumptions. */
+  section: "essential" | "advanced";
   value: HouseholdInputs;
   provenance: HouseholdProvenance;
   /** Per-field provenance notes from the project file (e.g. why a value was chosen). */
@@ -61,77 +92,98 @@ interface Props {
   incomeLimitRef?: ReferenceSource;
 }
 
-function SourceNote({ src, children }: { src: ReferenceSource; children?: ReactNode }) {
+function SourceNote({ src }: { src: ReferenceSource }) {
   return (
-    <span className="source-note">
-      {children}
+    <>
       <a href={src.landing_url ?? src.source_url} target="_blank" rel="noreferrer">
         {src.name}
       </a>{" "}
       · effective {src.effective_date} · checked {src.checked_at}. {src.limitations}
-    </span>
+    </>
   );
 }
 
-export function HouseholdControls({ value, provenance, notes, onChange, rateRefs, incomeLimitRef }: Props) {
+export function HouseholdControls({ section, value, provenance, notes, onChange, rateRefs, incomeLimitRef }: Props) {
   const kindOf = (k: HouseholdKey): Provenance => provenance[k] ?? "assumption";
 
-  const field = (f: FieldSpec, extra?: ReactNode) => {
+  const field = (f: FieldSpec, opts?: { extraInfo?: ReactNode; children?: ReactNode }) => {
     const scale = f.scale ?? 1;
-    const shown = +(value[f.key] * scale).toFixed(6);
-    const set = (raw: string) => {
-      const n = Number(raw);
-      if (raw === "" || !Number.isFinite(n)) return;
-      onChange({ ...value, [f.key]: +(n / scale).toFixed(10) }, f.key, "user");
-    };
+    const note = notes?.[f.key] && kindOf(f.key) !== "user" ? notes[f.key] : undefined;
+    const info =
+      f.hint || note || opts?.extraInfo ? (
+        <>
+          {f.hint && <p>{f.hint}</p>}
+          {note && <p>{note}</p>}
+          {opts?.extraInfo}
+        </>
+      ) : undefined;
     return (
-      <label className="field" key={f.key}>
-        <span className="label-row">
-          {f.label}
-          <ProvenanceTag kind={kindOf(f.key)} />
-        </span>
-        {f.slider && (
-          <input type="range" min={f.slider.min} max={f.slider.max} step={f.slider.step} value={shown} onChange={(e) => set(e.target.value)} />
-        )}
-        <input type="number" min={f.min} max={f.max} step={f.step} value={shown} onChange={(e) => set(e.target.value)} />
-        {f.hint && <span className="hint">{f.hint}</span>}
-        {notes?.[f.key] && kindOf(f.key) !== "user" && <span className="hint">{notes[f.key]}</span>}
-        {extra}
-      </label>
+      <Field
+        key={f.key}
+        label={f.label}
+        value={+(value[f.key] * scale).toFixed(6)}
+        onChange={(raw) => {
+          const n = Number(raw);
+          if (raw === "" || !Number.isFinite(n)) return;
+          onChange({ ...value, [f.key]: +(n / scale).toFixed(10) }, f.key, "user");
+        }}
+        step={f.step}
+        min={f.min}
+        max={f.max}
+        slider={f.slider}
+        prefix={f.prefix}
+        suffix={f.suffix}
+        tag={<ProvenanceTag kind={kindOf(f.key)} />}
+        info={info}
+      >
+        {opts?.children}
+      </Field>
     );
   };
 
-  const activeRate = rateRefs.find((r) => kindOf("annual_mortgage_rate") === "published_rate" && r.value === value.annual_mortgage_rate);
-
-  const rateExtras = (
-    <>
-      {rateRefs.map((r) => (
-        <button
-          key={r.id}
-          type="button"
-          className="preset"
-          onClick={(e) => {
-            e.preventDefault();
-            onChange({ ...value, annual_mortgage_rate: r.value! }, "annual_mortgage_rate", "published_rate");
-          }}
-        >
-          Use Freddie Mac {fmtPct(r.value!)} ({r.effective_date})
-        </button>
-      ))}
-      {activeRate ? (
-        <SourceNote src={activeRate} />
-      ) : kindOf("annual_mortgage_rate") === "assumption" ? (
-        <span className="hint">ASSUMPTION: 7% demo default, not a dated survey value.</span>
-      ) : null}
-    </>
-  );
+  if (section === "essential") {
+    const activeRate = rateRefs.find(
+      (r) => kindOf("annual_mortgage_rate") === "published_rate" && r.value === value.annual_mortgage_rate,
+    );
+    return (
+      <>
+        {field(F.income)}
+        {field(F.rate, {
+          extraInfo: activeRate ? (
+            <p>
+              <SourceNote src={activeRate} />
+            </p>
+          ) : kindOf("annual_mortgage_rate") === "assumption" ? (
+            <p>ASSUMPTION: not a dated survey value.</p>
+          ) : null,
+          children: (
+            <div className="preset-row" aria-label="Freddie Mac published rates">
+              {rateRefs.map((r, i) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`chip-btn${activeRate?.id === r.id ? " on" : ""}`}
+                  title={`Freddie Mac PMMS 30-yr, week of ${r.effective_date}`}
+                  onClick={() => onChange({ ...value, annual_mortgage_rate: r.value! }, "annual_mortgage_rate", "published_rate")}
+                >
+                  {fmtPct(r.value!)} {i === 0 ? "latest" : r.effective_date?.slice(5)}
+                </button>
+              ))}
+            </div>
+          ),
+        })}
+      </>
+    );
+  }
 
   const sizeIdx = incomeLimitRef?.household_sizes?.indexOf(value.household_size) ?? -1;
-  const incomeExtras =
+  const incomeLimitInfo =
     incomeLimitRef && incomeLimitRef.limits ? (
-      <span className="source-note">
-        <ProvenanceTag kind="published_income_limit" /> Orange County, {value.household_size}-person (eligibility thresholds,
-        not what a household can pay):
+      <>
+        <p>
+          <ProvenanceTag kind="published_income_limit" /> Orange County, {value.household_size}-person — eligibility thresholds,
+          not what a household can pay:
+        </p>
         {sizeIdx >= 0 ? (
           <table className="il">
             <tbody>
@@ -144,28 +196,27 @@ export function HouseholdControls({ value, provenance, notes, onChange, rateRefs
             </tbody>
           </table>
         ) : (
-          <> unknown for this household size.</>
+          <p>Unknown for this household size.</p>
         )}
-        <a href={incomeLimitRef.source_url} target="_blank" rel="noreferrer">
-          HCD 2026 State Income Limits
-        </a>{" "}
-        p.{incomeLimitRef.page} · revised {incomeLimitRef.effective_date} · checked {incomeLimitRef.checked_at}. The modeled
-        income above is an ASSUMPTION, not an HCD limit.
-      </span>
-    ) : null;
+        <p>
+          <a href={incomeLimitRef.source_url} target="_blank" rel="noreferrer">
+            HCD 2026 State Income Limits
+          </a>{" "}
+          p.{incomeLimitRef.page} · revised {incomeLimitRef.effective_date} · checked {incomeLimitRef.checked_at}. The modeled
+          income is an ASSUMPTION, not an HCD limit. In Orange County HCD's Low Income row is higher than its Median row — that is
+          how the table reads. 80% of the 4-person median is {fmtUsd0(Math.round(incomeLimitRef.limits.median[3] * 0.8))}{" "}
+          (arithmetic, not a published limit).
+        </p>
+      </>
+    ) : undefined;
 
   return (
-    <div>
-      {field(F.income, incomeExtras)}
+    <>
+      {field(F.size, { extraInfo: incomeLimitInfo })}
       {field(F.ratio)}
-      {field(F.rate, rateExtras)}
       {field(F.other)}
-      <details>
-        <summary>Advanced buyer assumptions</summary>
-        {field(F.cash)}
-        {field(F.term)}
-        {field(F.size)}
-      </details>
-    </div>
+      {field(F.cash)}
+      {field(F.term)}
+    </>
   );
 }

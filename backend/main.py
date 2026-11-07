@@ -76,6 +76,8 @@ class CreateProjectRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     from_id: Optional[str] = None  # duplicate this project; omit for a blank (all-ASSUMPTION) project
     inputs: Optional[CompareRequest] = None  # e.g. "save as new" with current edits
+    location: Optional[str] = Field(default=None, max_length=200)
+    candidate_home_counts: Optional[list[int]] = None  # blank projects only
 
 
 class UpdateProjectRequest(BaseModel):
@@ -98,7 +100,10 @@ def get_project(project_id: str) -> dict:
 def create_project(req: CreateProjectRequest) -> dict:
     if req.from_id:
         _get_or_404(req.from_id)
-    return _full(store.create_project(req.name, req.from_id, req.inputs))
+    try:
+        return _full(store.create_project(req.name, req.from_id, req.inputs, req.location, req.candidate_home_counts))
+    except ValueError as e:
+        raise HTTPException(422, str(e))
 
 
 @app.put("/api/projects/{project_id}")

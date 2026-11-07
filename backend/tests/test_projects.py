@@ -105,3 +105,17 @@ def test_conditional_grant_cannot_exceed_documented_max():
     assert client.post("/api/compare", json=req).status_code == 200
     grant["amount"] = 2200001
     assert client.post("/api/compare", json=req).status_code == 422
+
+
+def test_new_project_form_fields():
+    p = client.post("/api/projects", json={"name": "Garden Grove infill", "location": "Garden Grove, CA",
+                                           "candidate_home_counts": [8, 4, 12]}).json()
+    assert p["location"] == "Garden Grove, CA"
+    assert p["candidate_home_counts"] == [4, 8, 12] and p["default_home_count"] == 8
+    assert p["development"]["illustrative_site_capacity"] == 12 and p["documented_home_count"] is None
+    assert client.post("/api/projects", json={"name": "x", "candidate_home_counts": [0]}).status_code == 422
+
+
+def test_copy_summary_says_it_is_a_copy():
+    p = client.post("/api/projects", json={"name": "SA copy", "from_id": SA}).json()
+    assert p["summary"].startswith("Copy of “Santa Ana")

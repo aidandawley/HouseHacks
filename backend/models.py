@@ -97,6 +97,10 @@ class FundingSource(_Strict):
                 "basis 'verified_public_source' requires source metadata "
                 "(title, publisher, url, fact_supported)"
             )
+        if self.documented_max is not None and self.status == FundingStatus.committed:
+            raise ValueError(
+                f"{self.id!r} has a documented conditional ceiling; model it as 'conditional' or 'potential', not 'committed'"
+            )
         if self.documented_max is not None and self.amount is not None and self.amount > self.documented_max:
             raise ValueError(f"modeled amount for {self.id!r} exceeds its documented maximum")
         return self
@@ -110,6 +114,8 @@ class CompareRequest(_Strict):
     # Set for real documented sites: the analysis centers on this approved
     # configuration and treats other counts as what-if comparisons (no "best fit").
     documented_home_count: Optional[int] = None
+    # Organizer scenario M03: a hypothetical gift to explain (not added to the funding stack).
+    gift_amount: Optional[Money] = Field(default=None, ge=0, le=100_000_000)
 
     @model_validator(mode="after")
     def _documented_is_candidate(self) -> "CompareRequest":

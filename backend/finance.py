@@ -60,7 +60,7 @@ class FundingSummary(BaseModel):
 
 def _row_reason(src: FundingSource) -> tuple[bool, str]:
     if src.status == FundingStatus.potential:
-        return False, "Potential / candidate program — unconfirmed, never counted."
+        return False, "Potential / candidate — unconfirmed, so never counted."
     if src.instrument not in COUNTED_INSTRUMENTS:
         if src.instrument == FundingInstrument.repayable_loan:
             return False, "Repayable loan — helps timing/liquidity but must be repaid; does not close the subsidy gap."
@@ -68,8 +68,8 @@ def _row_reason(src: FundingSource) -> tuple[bool, str]:
     if src.amount is None:
         return False, "No amount entered."
     if src.status == FundingStatus.conditional:
-        return True, "Counted at the MODELED allocation of a conditional award (an assumption, not cash disbursed)."
-    return True, "Counted as assumed committed developer support (within this scenario)."
+        return True, "Counted at the amount you modeled from a conditional grant agreement — an assumption, not cash disbursed."
+    return True, "Counted as assumed committed support within this scenario (not a verified commitment)."
 
 
 def summarize_funding(sources: list[FundingSource]) -> FundingSummary:
@@ -118,6 +118,37 @@ def summarize_funding(sources: list[FundingSource]) -> FundingSummary:
 # ---------------------------------------------------------------- development scenarios
 
 
+class PerHome(BaseModel):
+    """Scenario totals ÷ homes, each rounded to cents (so lines may differ from the total by a few cents)."""
+
+    land: Money
+    site_work: Money
+    hard: Money
+    soft: Money
+    contingency: Money
+    financing: Money
+    total_cost: Money
+    family_pays: Money
+    counted_funding: Money
+    gap: Money
+
+
+class GiftImpact(BaseModel):
+    """Organizer scenario M03: what a hypothetical gift does, measured against this scenario's modeled gap.
+
+    The gift is NOT added to the funding stack here; it is a what-if lens. All comparisons
+    are to modeled (assumption-based) per-home figures, not Habitat's actual budget.
+    """
+
+    gift_amount: Money
+    share_of_one_home_gap: Money | None  # 0..1+, None when there is no gap
+    gifts_to_close_one_home: int | None
+    construction_sqft_equivalent: Money | None  # gift ÷ assumed hard cost per sq ft
+    comparable_line: str | None  # largest per-home cost line the gift fully covers
+    comparable_line_amount: Money | None
+    project_gap_after_gift: Money
+
+
 class ScenarioResult(BaseModel):
     homes: int
     land_cost: Money
@@ -138,6 +169,39 @@ class ScenarioResult(BaseModel):
     within_subsidy_cap: bool
     within_capacity: bool
     eligible: bool
+    per_home: PerHome
+    gift: GiftImpact | None = None
+
+
+LINE_LABELS = {
+    "land": "land cost",
+    "site_work": "site work",
+    "hard": "construction",
+    "soft": "design, permits & fees (soft costs)",
+    "contingency": "contingency cushion",
+    "financing": "interest & holding costs",
+}
+
+
+def gift_impact(s: ScenarioResult, gift: Decimal, hard_cost_per_sqft: Decimal) -> GiftImpact:
+    with localcontext() as ctx:
+        ctx.prec = 50
+        g = round_money(gift)
+        gap1 = s.per_home.gap
+        share = (g / gap1).quantize(Decimal("0.0001")) if gap1 > 0 else None
+        gifts = int((gap1 / g).to_integral_value(rounding="ROUND_CEILING")) if gap1 > 0 and g > 0 else None
+        sqft = (g / hard_cost_per_sqft).quantize(Decimal("1")) if hard_cost_per_sqft > 0 else None
+        covered = [(k, getattr(s.per_home, k)) for k in LINE_LABELS if 0 < getattr(s.per_home, k) <= g]
+        best = max(covered, key=lambda kv: kv[1]) if covered else None
+        return GiftImpact(
+            gift_amount=g,
+            share_of_one_home_gap=share,
+            gifts_to_close_one_home=gifts,
+            construction_sqft_equivalent=sqft,
+            comparable_line=LINE_LABELS[best[0]] if best else None,
+            comparable_line_amount=best[1] if best else None,
+            project_gap_after_gift=max(ZERO, s.remaining_gap - g),
+        )
 
 
 def analyze_development(
@@ -187,6 +251,18 @@ def analyze_development(
             within_subsidy_cap=within_cap,
             within_capacity=within_capacity,
             eligible=within_cap and within_capacity,
+            per_home=PerHome(
+                land=round_money(land / homes),
+                site_work=round_money(site / homes),
+                hard=round_money(hard / homes),
+                soft=round_money(soft / homes),
+                contingency=round_money(contingency / homes),
+                financing=round_money(financing / homes),
+                total_cost=round_money(tdc / homes),
+                family_pays=price,
+                counted_funding=round_money(support / homes),
+                gap=round_money(remaining / homes),
+            ),
         )
 
 

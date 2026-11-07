@@ -5,7 +5,7 @@ const LABELS: Record<Provenance, { text: string; cls: string; title: string }> =
   assumption: { text: "ASSUMPTION", cls: "illustrative", title: "Made up for this demo scenario. Not real Habitat, lender or program data." },
   documented: { text: "DOCUMENTED", cls: "verified", title: "Stated in a cited public record (see Site facts for the page)." },
   derived: { text: "DERIVED", cls: "computed", title: "Calculated from documented facts; see the note for how." },
-  user: { text: "User-entered", cls: "user", title: "Entered by you in this session; not verified." },
+  user: { text: "User-entered", cls: "user", title: "Entered by your team in this project — not independently verified by HomeForge." },
   published_rate: { text: "Official published rate", cls: "verified", title: "Read from a dated Freddie Mac PMMS observation." },
   published_income_limit: {
     text: "Published income-limit reference",

@@ -1,4 +1,5 @@
 import type { DevelopmentInputs, InputProvenance, Provenance } from "../types";
+import { Field } from "./Field";
 import { ProvenanceTag } from "./ProvenanceTag";
 
 type Key = keyof DevelopmentInputs;
@@ -11,93 +12,90 @@ interface FieldSpec {
   min: number;
   max?: number;
   slider?: { min: number; max: number; step: number };
+  prefix?: string;
+  suffix?: string;
   hint?: string;
 }
 
-const MAIN: FieldSpec[] = [
-  { key: "hard_cost_per_sqft", label: "Hard cost ($ / sq ft)", step: 5, min: 0, slider: { min: 150, max: 600, step: 5 } },
+const ESSENTIAL: FieldSpec[] = [
   {
-    key: "additional_subsidy_budget",
-    label: "Extra-subsidy cap we can tolerate ($)",
-    step: 25000,
+    key: "hard_cost_per_sqft",
+    label: "Construction cost",
+    prefix: "$",
+    suffix: "/ sq ft",
+    step: 5,
     min: 0,
-    slider: { min: 0, max: 4000000, step: 25000 },
-    hint: "A budget constraint for the recommendation only — not money secured; never subtracted from the gap.",
+    slider: { min: 150, max: 600, step: 5 },
+    hint: "Hard construction cost. Not taken from the 2020 Terner Center paper.",
   },
 ];
 
 const ADVANCED: FieldSpec[] = [
-  { key: "land_cost", label: "Land / acquisition ($)", step: 10000, min: 0 },
-  { key: "site_work_cost", label: "Site work ($)", step: 5000, min: 0 },
-  { key: "gross_sqft_per_home", label: "Gross sq ft per home", step: 10, min: 1 },
-  { key: "soft_cost_rate", label: "Soft costs (% of hard)", scale: 100, step: 1, min: 0, max: 100 },
-  { key: "contingency_rate", label: "Contingency (% of hard + site)", scale: 100, step: 1, min: 0, max: 100 },
+  { key: "land_cost", label: "Land / acquisition", prefix: "$", step: 10000, min: 0 },
+  { key: "site_work_cost", label: "Site work", prefix: "$", step: 5000, min: 0 },
+  { key: "gross_sqft_per_home", label: "Floor area per home", suffix: "sq ft", step: 10, min: 1 },
+  { key: "soft_cost_rate", label: "Design, permits & fees", suffix: "% of construction", scale: 100, step: 1, min: 0, max: 100 },
+  { key: "contingency_rate", label: "Cushion for surprises", suffix: "% of constr. + site", scale: 100, step: 1, min: 0, max: 100 },
   {
     key: "financing_rate",
-    label: "Financing / carrying allowance (%)",
+    label: "Interest & holding while building",
+    suffix: "%",
     scale: 100,
     step: 0.5,
     min: 0,
     max: 100,
     hint: "Coarse carrying-cost allowance, not an APR or loan model.",
   },
-  { key: "illustrative_site_capacity", label: "Site capacity (homes)", step: 1, min: 0 },
+  { key: "illustrative_site_capacity", label: "Max homes on this site", suffix: "homes", step: 1, min: 0 },
+  {
+    key: "additional_subsidy_budget",
+    label: "Additional funding you assume could be raised",
+    prefix: "$",
+    step: 25000,
+    min: 0,
+    hint: "A comparison line for the scenario table only — not money secured, never subtracted from the gap.",
+  },
 ];
 
 interface Props {
+  section: "essential" | "advanced";
   value: DevelopmentInputs;
   provenance: Record<string, InputProvenance>;
-  candidateCounts: number[];
-  selected: number | null;
-  scenarioLabels: Record<string, string>;
-  onSelect: (homes: number) => void;
   onChange: (next: DevelopmentInputs, key: Key) => void;
 }
 
-export function DevelopmentControls({ value, provenance, candidateCounts, selected, scenarioLabels, onSelect, onChange }: Props) {
+export function DevelopmentControls({ section, value, provenance, onChange }: Props) {
   const field = (f: FieldSpec) => {
     const scale = f.scale ?? 1;
-    const shown = +(value[f.key] * scale).toFixed(6);
     const p = provenance[`development.${f.key}`];
-    const set = (raw: string) => {
-      const n = Number(raw);
-      if (raw === "" || !Number.isFinite(n)) return;
-      onChange({ ...value, [f.key]: +(n / scale).toFixed(10) }, f.key);
-    };
+    const note = p?.note && p.kind !== "user" ? p.note : undefined;
     return (
-      <label className="field" key={f.key}>
-        <span className="label-row">
-          {f.label}
-          <ProvenanceTag kind={(p?.kind as Provenance) ?? "assumption"} />
-        </span>
-        {f.slider && (
-          <input type="range" min={f.slider.min} max={f.slider.max} step={f.slider.step} value={shown} onChange={(e) => set(e.target.value)} />
-        )}
-        <input type="number" min={f.min} max={f.max} step={f.step} value={shown} onChange={(e) => set(e.target.value)} />
-        {f.hint && <span className="hint">{f.hint}</span>}
-        {p?.note && p.kind !== "user" && <span className="hint">{p.note}</span>}
-      </label>
+      <Field
+        key={f.key}
+        label={f.label}
+        value={+(value[f.key] * scale).toFixed(6)}
+        onChange={(raw) => {
+          const n = Number(raw);
+          if (raw === "" || !Number.isFinite(n)) return;
+          onChange({ ...value, [f.key]: +(n / scale).toFixed(10) }, f.key);
+        }}
+        step={f.step}
+        min={f.min}
+        max={f.max}
+        slider={f.slider}
+        prefix={f.prefix}
+        suffix={f.suffix}
+        tag={<ProvenanceTag kind={(p?.kind as Provenance) ?? "assumption"} />}
+        info={
+          f.hint || note ? (
+            <>
+              {f.hint && <p>{f.hint}</p>}
+              {note && <p>{note}</p>}
+            </>
+          ) : undefined
+        }
+      />
     );
   };
-
-  return (
-    <div>
-      <div className="field">
-        <span className="label-row">Home count</span>
-        <div className="seg">
-          {candidateCounts.map((n) => (
-            <button key={n} type="button" className={n === selected ? "on" : ""} onClick={() => onSelect(n)}>
-              {n}
-            </button>
-          ))}
-        </div>
-        {selected !== null && scenarioLabels[String(selected)] && <span className="hint">{scenarioLabels[String(selected)]}</span>}
-      </div>
-      {MAIN.map(field)}
-      <details>
-        <summary>Land, site, soft-cost &amp; capacity assumptions</summary>
-        {ADVANCED.map(field)}
-      </details>
-    </div>
-  );
+  return <>{(section === "essential" ? ESSENTIAL : ADVANCED).map(field)}</>;
 }

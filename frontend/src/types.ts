@@ -157,6 +157,7 @@ export interface CompareRequest {
   funding_sources: FundingSource[];
   /** Real documented site: analysis centers on this approved count; others are what-ifs. */
   documented_home_count?: number | null;
+  gift_amount?: number | null;
 }
 
 export interface AffordabilityResult {
@@ -187,6 +188,30 @@ export interface FundingSummary {
   rows: FundingRowResult[];
 }
 
+export interface PerHome {
+  land: number;
+  site_work: number;
+  hard: number;
+  soft: number;
+  contingency: number;
+  financing: number;
+  total_cost: number;
+  family_pays: number;
+  counted_funding: number;
+  gap: number;
+}
+
+/** Organizer scenario M03 — a what-if lens; the gift is not added to the funding stack. */
+export interface GiftImpact {
+  gift_amount: number;
+  share_of_one_home_gap: number | null;
+  gifts_to_close_one_home: number | null;
+  construction_sqft_equivalent: number | null;
+  comparable_line: string | null;
+  comparable_line_amount: number | null;
+  project_gap_after_gift: number;
+}
+
 export interface ScenarioResult {
   homes: number;
   land_cost: number;
@@ -207,6 +232,8 @@ export interface ScenarioResult {
   within_subsidy_cap: boolean;
   within_capacity: boolean;
   eligible: boolean;
+  per_home: PerHome;
+  gift: GiftImpact | null;
 }
 
 export interface CompareResponse {

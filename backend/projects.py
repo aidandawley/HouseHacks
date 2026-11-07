@@ -97,7 +97,13 @@ def _save(project: Project) -> Project:
     return project
 
 
-def create_project(name: str, from_id: str | None = None, inputs: CompareRequest | None = None) -> Project:
+def create_project(
+    name: str,
+    from_id: str | None = None,
+    inputs: CompareRequest | None = None,
+    location: str | None = None,
+    candidate_home_counts: list[int] | None = None,
+) -> Project:
     template = get_project(from_id or BLANK_TEMPLATE_ID)
     data = template.model_dump(mode="json")
     now = _now()
@@ -112,8 +118,20 @@ def create_project(name: str, from_id: str | None = None, inputs: CompareRequest
     )
     if not from_id:
         # Blank project: no site facts or sources carried over; every input is an ASSUMPTION.
-        data.update(site=None, sources=[], summary="New project. Every input starts as an ASSUMPTION until you replace it.",
-                    notes=None, input_provenance={}, location=None)
+        counts = sorted(set(candidate_home_counts or data["candidate_home_counts"]))
+        if not counts or any(n <= 0 for n in counts):
+            raise ValueError("candidate_home_counts must be positive integers")
+        data.update(
+            site=None, sources=[], notes=None, input_provenance={}, location=location or None,
+            summary="New project. Every input starts as an ASSUMPTION until you replace it with your own or a sourced value.",
+            candidate_home_counts=counts, default_home_count=counts[len(counts) // 2], documented_home_count=None,
+            scenario_labels={},
+        )
+        data["development"]["illustrative_site_capacity"] = max(counts)
+    else:
+        data.update(summary=f"Copy of “{template.name}” with your edits. {template.summary or ''}".strip())
+        if location:
+            data["location"] = location
     project = Project.model_validate(data)
     if inputs is not None:
         project = _apply_inputs(project, inputs, mark_user=True)
@@ -123,7 +141,7 @@ def create_project(name: str, from_id: str | None = None, inputs: CompareRequest
 def _apply_inputs(project: Project, inputs: CompareRequest, mark_user: bool) -> Project:
     data = project.model_dump(mode="json")
     # documented_home_count is a property of the project record, not an editable input.
-    new = inputs.model_dump(mode="json", exclude={"documented_home_count"})
+    new = inputs.model_dump(mode="json", exclude={"documented_home_count", "gift_amount"})
     prov = dict(data.get("input_provenance") or {})
     if mark_user:
         for section in ("household", "development"):

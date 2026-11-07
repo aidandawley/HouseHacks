@@ -1,4 +1,4 @@
-import { fmtUsd0 } from "../format";
+import { fmtCompact, fmtUsd0 } from "../format";
 import type { CompareResponse } from "../types";
 
 interface Props {
@@ -17,49 +17,57 @@ export function ScenarioComparison({ analysis, selected, scenarioLabels, stale, 
   const target = documentedMode ? doc : rec;
   return (
     <div className={stale ? "stale" : undefined}>
+      <p className="small muted" style={{ marginTop: 0 }}>
+        All columns are calculated from the labeled assumptions — not Habitat's budget. Click a row to show it in 3D.
+      </p>
       <table className="compare">
         <thead>
           <tr>
             <th>Homes</th>
-            <th>Total cost</th>
-            <th>Sale proceeds</th>
+            <th title="Total development cost">Cost to build</th>
+            <th title="Sale proceeds">Families pay</th>
             <th>Counted funding</th>
-            <th>Remaining gap</th>
-            <th>Gap / home</th>
-            <th>Screening result</th>
+            <th title="Remaining gap">Still to raise (modeled)</th>
+            <th>Per home</th>
+            <th>Screening note</th>
           </tr>
         </thead>
         <tbody>
-          {analysis.scenarios.map((s) => (
-            <tr key={s.homes} className={s.homes === selected ? "sel" : undefined} onClick={() => onSelect(s.homes)}>
-              <td>
-                <strong>{s.homes}</strong>
-                {documentedMode && s.homes === doc && (
-                  <span className="tag verified" style={{ marginLeft: 6 }}>documented</span>
-                )}
-                {!documentedMode && s.homes === rec && (
-                  <span className="tag verified" style={{ marginLeft: 6 }}>best fit</span>
-                )}
-                {scenarioLabels[String(s.homes)] && <div className="small muted">{scenarioLabels[String(s.homes)]}</div>}
-              </td>
-              <td>{fmtUsd0(s.total_development_cost)}</td>
-              <td>{fmtUsd0(s.sale_proceeds)}</td>
-              <td>{fmtUsd0(s.counted_project_support)}</td>
-              <td>
-                <strong>{fmtUsd0(s.remaining_gap)}</strong>
-              </td>
-              <td>{fmtUsd0(s.gap_per_home)}</td>
-              <td className={s.eligible ? "ok" : "no"}>
-                {!s.within_capacity
-                  ? "✗ over site capacity"
-                  : s.remaining_gap === 0
-                    ? "✓ pencils (no gap)"
-                    : s.eligible
-                      ? "✓ fits cap & capacity"
-                      : `✗ ${fmtUsd0(-s.additional_budget_headroom)} over cap`}
-              </td>
-            </tr>
-          ))}
+          {analysis.scenarios.map((s) => {
+            const whatIf = documentedMode && s.homes !== doc;
+            return (
+              <tr
+                key={s.homes}
+                className={`${s.homes === selected ? "sel" : ""}${whatIf ? " whatif-row" : ""}`}
+                onClick={() => onSelect(s.homes)}
+              >
+                <td>
+                  <strong>{s.homes}</strong>
+                  {documentedMode && s.homes === doc && <span className="tag verified" style={{ marginLeft: 6 }}>documented</span>}
+                  {!documentedMode && s.homes === rec && <span className="tag verified" style={{ marginLeft: 6 }}>best fit</span>}
+                  {scenarioLabels[String(s.homes)] && <div className="small muted">{scenarioLabels[String(s.homes)]}</div>}
+                </td>
+                <td>{fmtUsd0(s.total_development_cost)}</td>
+                <td>{fmtUsd0(s.sale_proceeds)}</td>
+                <td>{fmtUsd0(s.counted_project_support)}</td>
+                <td>
+                  <strong>{fmtUsd0(s.remaining_gap)}</strong>
+                </td>
+                <td>{fmtUsd0(s.gap_per_home)}</td>
+                <td className={!s.within_capacity ? "no" : s.eligible ? "ok" : "neutral"}>
+                  {!s.within_capacity
+                    ? documentedMode
+                      ? "exceeds approved count"
+                      : "✗ over site capacity"
+                    : s.remaining_gap === 0
+                      ? "✓ fully covered"
+                      : s.eligible
+                        ? "✓ within assumed raisable funding"
+                        : `${fmtCompact(-s.additional_budget_headroom)} beyond assumed raisable funding`}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <p className="small">
@@ -68,11 +76,12 @@ export function ScenarioComparison({ analysis, selected, scenarioLabels, stale, 
         </button>{" "}
         {analysis.recommendation_reason}
       </p>
-      <p className="small muted">
-        {documentedMode
-          ? "Real documented site: the approved configuration is the subject of the analysis. Other counts are what-if comparisons, not recommendations or buildability claims."
-          : "“Best fit” = most homes whose remaining gap fits the assumed extra-subsidy cap and site capacity. A screening signal, not an approval or a buildability claim."}
-      </p>
+      {!documentedMode && (
+        <p className="small muted">
+          “Best fit” = most homes whose modeled gap is within the additional funding you assume could be raised and within site
+          capacity. A screening signal, not an approval or a buildability claim.
+        </p>
+      )}
     </div>
   );
 }

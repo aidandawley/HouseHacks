@@ -12,7 +12,8 @@ client = TestClient(app)
 def test_default_recommends_8_and_explains_10():
     r = compare(concept())
     assert r.recommended_home_count == 8
-    assert "976,233.50" in r.recommendation_reason and "76,233.50" in r.recommendation_reason
+    # prose uses whole dollars; exact cents live in the scenario fields
+    assert "$976,234 gap" in r.recommendation_reason and "$76,234 over" in r.recommendation_reason
 
 
 def test_one_million_cap_recommends_10_with_identical_gaps():
@@ -74,9 +75,11 @@ def test_documented_site_centers_on_documented_config_with_no_best_fit():
     assert body["analysis_mode"] == "documented_configuration"
     assert body["recommended_home_count"] is None and body["minimum_needed_if_none_fit"] is None
     six = next(s for s in body["scenarios"] if s["homes"] == 6)
-    assert f"{six['remaining_gap']:,.2f}" in body["recommendation_reason"]
-    assert "documented 6-home" in body["recommendation_reason"]
-    assert "4 and 8 homes are unapproved what-if" in body["recommendation_reason"]
+    reason = body["recommendation_reason"]
+    assert f"{six['remaining_gap']:,.0f}" in reason
+    assert reason.startswith("Using HomeForge's assumed costs (not Habitat's actual budget)")
+    assert "documented 6-home" in reason
+    assert "4 and 8 homes are unapproved what-ifs" in reason
 
 
 def test_concept_project_keeps_max_homes_mode():
@@ -95,3 +98,29 @@ def test_saving_inputs_does_not_drop_documented_count():
     req.pop("documented_home_count")
     p = client.post("/api/projects", json={"name": "SA copy", "from_id": "santa-ana-1921-w-washington", "inputs": req}).json()
     assert p["documented_home_count"] == 6
+
+
+def test_documented_grant_cannot_be_marked_committed():
+    req = santa_ana_request()
+    grant = next(f for f in req["funding_sources"] if f["id"] == "santa-ana-inclusionary-grant")
+    grant["status"] = "committed"
+    assert client.post("/api/compare", json=req).status_code == 422
+
+
+def test_m03_gift_impact_on_santa_ana():
+    req = santa_ana_request()
+    req["gift_amount"] = 25000
+    body = client.post("/api/compare", json=req).json()
+    six = next(s for s in body["scenarios"] if s["homes"] == 6)
+    ph, gift = six["per_home"], six["gift"]
+    assert ph["gap"] == six["gap_per_home"] and ph["family_pays"] == body["affordability"]["affordable_sale_price_per_home"]
+    assert gift["gift_amount"] == 25000
+    assert abs(gift["share_of_one_home_gap"] - 25000 / ph["gap"]) < 0.0001
+    assert gift["gifts_to_close_one_home"] == -(-ph["gap"] // 25000)  # ceil
+    assert gift["construction_sqft_equivalent"] == round(25000 / 300)
+    assert gift["comparable_line"] == "site work" and gift["comparable_line_amount"] == ph["site_work"]
+    assert gift["project_gap_after_gift"] == round(six["remaining_gap"] - 25000, 2)
+    # the gift is a lens only: the gap itself is unchanged
+    base = client.post("/api/compare", json=santa_ana_request()).json()
+    assert base["scenarios"][1]["remaining_gap"] == six["remaining_gap"]
+    assert base["scenarios"][1]["gift"] is None

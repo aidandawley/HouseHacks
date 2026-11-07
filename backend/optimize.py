@@ -12,7 +12,7 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 from .affordability import AffordabilityResult, calculate_affordability
-from .finance import FundingSummary, ScenarioResult, analyze_development, summarize_funding
+from .finance import FundingSummary, ScenarioResult, analyze_development, gift_impact, summarize_funding
 from .models import CompareRequest, Money
 
 
@@ -29,7 +29,8 @@ class Comparison(BaseModel):
 
 
 def _usd(d: Decimal) -> str:
-    return f"${d:,.2f}"
+    # Whole dollars in prose: cents imply false precision on assumption-based figures.
+    return f"${d:,.0f}"
 
 
 def compare(request: CompareRequest) -> Comparison:
@@ -41,6 +42,11 @@ def compare(request: CompareRequest) -> Comparison:
         )
         for n in request.candidate_home_counts  # already unique + ascending (validated)
     ]
+    if request.gift_amount is not None and request.gift_amount > 0:
+        scenarios = [
+            s.model_copy(update={"gift": gift_impact(s, request.gift_amount, request.development.hard_cost_per_sqft)})
+            for s in scenarios
+        ]
 
     if request.documented_home_count is not None:
         mode = "documented_configuration"
@@ -81,25 +87,26 @@ def _documented_reason(request: CompareRequest, scenarios: list[ScenarioResult],
     """Real documented site: report the approved configuration's gap; others are what-ifs only."""
     doc = next(s for s in scenarios if s.homes == request.documented_home_count)
     cap = request.development.additional_subsidy_budget
+    prefix = "Using HomeForge's assumed costs (not Habitat's actual budget), "
     if doc.remaining_gap == 0:
         reason = (
-            f"The documented {doc.homes}-home configuration pencils under these assumptions "
+            f"{prefix}the documented {doc.homes}-home configuration would be fully covered "
             f"(modeled surplus {_usd(doc.modeled_surplus)}) after {_usd(funding.counted_project_support)} of counted funding."
         )
     else:
         reason = (
-            f"The documented {doc.homes}-home configuration leaves a {_usd(doc.remaining_gap)} gap "
-            f"({_usd(doc.gap_per_home)} per home) after {_usd(funding.counted_project_support)} of counted "
-            f"assumed/modeled funding. "
+            f"{prefix}the documented {doc.homes}-home configuration would still need about "
+            f"{_usd(doc.remaining_gap)} ({_usd(doc.gap_per_home)} per home) after "
+            f"{_usd(funding.counted_project_support)} of counted assumed/modeled funding. "
         )
         reason += (
-            f"That fits the assumed {_usd(cap)} extra-subsidy cap."
+            f"That is within the {_usd(cap)} of additional funding assumed raisable."
             if doc.within_subsidy_cap
-            else f"That is {_usd(doc.remaining_gap - cap)} more than the assumed {_usd(cap)} extra-subsidy cap."
+            else f"That is {_usd(doc.remaining_gap - cap)} beyond the {_usd(cap)} of additional funding assumed raisable."
         )
     others = [str(s.homes) for s in scenarios if s.homes != doc.homes]
     if others:
-        reason += f" {' and '.join(others)} homes are unapproved what-if comparisons, not recommendations."
+        reason += f" {' and '.join(others)} homes are unapproved what-ifs for comparison only."
     return reason
 
 
