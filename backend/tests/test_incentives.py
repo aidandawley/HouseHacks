@@ -187,7 +187,52 @@ def test_agent_tools_are_read_only_and_bound():
     from backend.advisor import tool_definitions
 
     names = {t["name"] for t in tool_definitions()}
-    assert names == {"get_current_scenario", "list_incentive_candidates", "check_candidate", "simulate_opportunity"}
+    assert names == {"get_current_scenario", "list_incentive_candidates", "check_candidate", "estimate_tax_relief", "simulate_opportunity"}
     for t in tool_definitions():
         assert t["strict"] is True and t["input_schema"]["additionalProperties"] is False
         assert "scenario" not in t["input_schema"]["properties"]  # Claude cannot pass scenario data
+
+
+# ---------------------------------------------------------------- quick tax-relief estimates
+
+
+def test_tax_relief_estimate_formula_and_defaults():
+    p = get_project(SA)
+    est = incentives.estimate_tax_relief(incentives.get_program("CA_RTC_214_15_1"), p.inputs(), 6)
+    s = six(sa_inputs())
+    basis = s.land_cost + (s.site_work_cost + s.hard_cost) * D("0.5")
+    annual = (basis * D("0.011")).quantize(D("1"))
+    assert est.annual_tax_estimate == float(annual) and est.estimated_relief == float(annual)  # 1 lien date
+    assert est.eligible_lien_dates == 1 and est.effective_tax_rate == 0.011
+    assert est.suggested_amount == min(est.estimated_relief, 30000)
+    assert {a.label for a in est.assumptions} <= {"ASSUMPTION", "SOURCED", "MODEL INPUT", "DERIVED"}
+    assert "2027" in next(a.basis for a in est.assumptions if a.name == "Eligible lien dates")
+
+
+def test_estimate_is_capped_by_budget_line_and_bounded():
+    req = sa_inputs(property_tax_carry=10000)
+    est = client.post("/api/incentives/estimate-tax-relief", json={"project_id": SA, "inputs": req,
+                                                                   "program_id": "CA_RTC_214_15_1", "eligible_lien_dates": 3}).json()
+    assert est["estimated_relief"] > 10000 and est["suggested_amount"] == 10000 and est["capped_by_budget_line"]
+    bad = client.post("/api/incentives/estimate-tax-relief", json={"project_id": SA, "inputs": req,
+                                                                   "program_id": "CA_RTC_214_15_1", "effective_tax_rate": 0.5})
+    assert bad.status_code == 422
+    not_tax = client.post("/api/incentives/estimate-tax-relief", json={"project_id": SA, "inputs": req, "program_id": "HUD_HOME"})
+    assert not_tax.status_code == 422
+
+
+def test_card_prefills_estimate_not_whole_line_and_simulation_uses_it():
+    card = client.post("/api/incentives/check", json={"project_id": SA, "inputs": sa_inputs(), "program_id": "CA_RTC_214_15_1"}).json()
+    est = card["tax_estimate"]
+    assert est and card["suggested_amount"] == est["suggested_amount"] < 30000
+    sim = simulate("CA_RTC_214_15_1", card["suggested_amount"])
+    six_delta = next(d for d in sim["deltas"] if d["homes"] == 6)
+    assert round(six_delta["baseline_gap"] - six_delta["hypothetical_gap"], 2) == est["suggested_amount"]
+
+
+def test_agent_has_estimate_tool():
+    from backend.advisor import tool_definitions
+
+    tool = next(t for t in tool_definitions() if t["name"] == "estimate_tax_relief")
+    assert tool["strict"] and set(tool["input_schema"]["required"]) == {
+        "program_id", "effective_tax_rate", "built_share_at_lien_date", "eligible_lien_dates"}

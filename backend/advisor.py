@@ -30,7 +30,7 @@ Only make factual program claims based on the source-backed catalog returned by 
 
 Differentiate verified project facts, user assumptions, derived values, and unknowns. Never present a tentative source as approved. A loan is not a grant; fee deferral is not fee forgiveness; a property-tax exemption is a possible expense reduction, not a cash grant or a transferable tax credit; buyer assistance is not automatically developer revenue. LIHTC rental financing is not applicable by default to a for-sale affordable-homeownership project.
 
-How to work: call get_current_scenario, then list_incentive_candidates, then check_candidate on the one or two best-fit leads. Only call simulate_opportunity when the user asked for an estimate or gave an amount; for a property-tax exemption you may use the scenario's modeled property-tax line as an illustrative upper bound and say so. You cannot apply changes — tell the user they can review the simulation and click "Apply as hypothetical" themselves.
+How to work (be quick — this is a hypothetical screen, not a filing): call get_current_scenario, then list_incentive_candidates, then check_candidate on the one or two best-fit leads. For any property-tax relief lead, always produce a quick figure: call estimate_tax_relief (the defaults are fine unless the scenario clearly suggests otherwise), then call simulate_opportunity with the estimate's suggested_amount_usd. Report the estimate as a rough hypothetical, state its formula and main assumptions in one sentence, and never call it a real or approved saving. For grant leads, only simulate if the user gave an amount. You cannot apply changes — tell the user they can review the simulation and click "Apply as hypothetical" themselves.
 
 Answer in 4-8 short sentences of plain text (no markdown headings or tables). For each lead you mention, say whether it is verified, plausible, unknown, or unavailable, name at least one missing fact or disqualifier, and cite the source title and checked date from the tool result. If unsure, say unknown. Do not request or process personal information about real buyers."""
 
@@ -64,6 +64,17 @@ def tool_definitions() -> list[dict[str, Any]]:
             "Rule-based screen of one program against this scenario: known matches, conflicts, missing evidence, availability, source. Never an eligibility determination. Read-only.",
             {"program_id": {"type": "string", "enum": ids}},
             ["program_id"],
+        ),
+        _tool(
+            "estimate_tax_relief",
+            "Quick deterministic estimate of property-tax relief for a property-tax exemption lead: (modeled land + share of site work and construction in place on the lien date) × effective tax rate × eligible lien dates, capped at the budget's property-tax line. Defaults: effective_tax_rate 0.011 (≈1% plus local assessments, an assumption), built_share_at_lien_date 0.5, eligible_lien_dates 1 (only the 2027-01-01 lien date remains for RTC §214.15.1). Allowed ranges: rate 0.008–0.02, share 0–1, lien dates 1–5. Read-only.",
+            {
+                "program_id": {"type": "string", "enum": ids},
+                "effective_tax_rate": {"type": "number"},
+                "built_share_at_lien_date": {"type": "number"},
+                "eligible_lien_dates": {"type": "integer"},
+            },
+            ["program_id", "effective_tax_rate", "built_share_at_lien_date", "eligible_lien_dates"],
         ),
         _tool(
             "simulate_opportunity",
@@ -119,7 +130,8 @@ def scenario_snapshot(project: Project, inputs: CompareRequest, homes: Optional[
 
 
 def _execute(name: str, args: dict[str, Any], project: Project, inputs: CompareRequest, homes: Optional[int],
-             checked: list[str], sims: list[incentives.Simulation]) -> str:
+             checked: list[str], sims: list[incentives.Simulation],
+             estimates: dict[str, incentives.TaxReliefEstimate]) -> str:
     if name == "get_current_scenario":
         return json.dumps(scenario_snapshot(project, inputs, homes))
     if name == "list_incentive_candidates":
@@ -135,6 +147,18 @@ def _execute(name: str, args: dict[str, Any], project: Project, inputs: CompareR
         if pid not in checked:
             checked.append(pid)
         return card.model_dump_json()
+    if name == "estimate_tax_relief":
+        pid = args["program_id"]
+        est = incentives.estimate_tax_relief(
+            incentives.get_program(pid), inputs, homes,
+            args.get("effective_tax_rate"), args.get("built_share_at_lien_date"), args.get("eligible_lien_dates"),
+        )
+        estimates[pid] = est
+        if pid not in checked:
+            checked.append(pid)
+        out = est.model_dump()
+        out["suggested_amount_usd"] = out.pop("suggested_amount")
+        return json.dumps(out)
     if name == "simulate_opportunity":
         pid = args["program_id"]
         sim = incentives.simulate(project, inputs, pid, args.get("amount_usd"))
@@ -183,6 +207,7 @@ def run_advisor(project: Project, inputs: CompareRequest, homes: Optional[int], 
 
     checked: list[str] = []
     sims: list[incentives.Simulation] = []
+    estimates: dict[str, incentives.TaxReliefEstimate] = {}
     trace: list[str] = []
     try:
         for _ in range(MAX_TOOL_ROUNDS):
@@ -192,7 +217,7 @@ def run_advisor(project: Project, inputs: CompareRequest, homes: Optional[int], 
                 system=SYSTEM_PROMPT,
                 tools=tools,
                 messages=messages,
-                output_config={"effort": "medium"},
+                output_config={"effort": "low"},  # quick hypothetical screen; the backend does the math
                 betas=["server-side-fallback-2026-07-01"],
                 fallbacks="default",
             )
@@ -207,7 +232,7 @@ def run_advisor(project: Project, inputs: CompareRequest, homes: Optional[int], 
                     continue
                 trace.append(block.name)
                 try:
-                    out = _execute(block.name, dict(block.input), project, inputs, homes, checked, sims)
+                    out = _execute(block.name, dict(block.input), project, inputs, homes, checked, sims, estimates)
                     results.append({"type": "tool_result", "tool_use_id": block.id, "content": out})
                 except Exception as e:  # tool errors go back to Claude, never crash the request
                     results.append({"type": "tool_result", "tool_use_id": block.id, "content": f"Error: {e}", "is_error": True})
@@ -218,7 +243,12 @@ def run_advisor(project: Project, inputs: CompareRequest, homes: Optional[int], 
     except anthropic.APIConnectionError:
         return _fallback(project, inputs, message, "could not reach the Claude API")
 
-    cards = [incentives.screen(incentives.get_program(pid), project, inputs) for pid in checked]
+    cards = []
+    for pid in checked:
+        card = incentives.screen(incentives.get_program(pid), project, inputs)
+        if pid in estimates and card.tax_estimate is not None:
+            card = card.model_copy(update={"tax_estimate": estimates[pid], "suggested_amount": estimates[pid].suggested_amount})
+        cards.append(card)
     if not cards:
         cards = [c for c in incentives.screen_all(project, inputs) if c.match_status != "unsupported"][:3]
     return AdvisorResult(

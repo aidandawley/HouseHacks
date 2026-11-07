@@ -98,6 +98,104 @@ def program_ids() -> list[str]:
     return [p.id for p in load_catalog()]
 
 
+# ---------------------------------------------------------------- property-tax relief estimate
+
+# Defaults and bounds for the quick, hypothetical estimate. Each is a labeled ASSUMPTION or sourced.
+TAX_RATE_DEFAULT = Decimal("0.011")
+TAX_RATE_BOUNDS = (Decimal("0.008"), Decimal("0.02"))
+BUILT_SHARE_DEFAULT = Decimal("0.5")
+LIEN_DATES_DEFAULT = 1
+LIEN_DATES_BOUNDS = (1, 5)
+
+
+class EstimateAssumption(BaseModel):
+    name: str
+    value: str
+    label: Literal["ASSUMPTION", "SOURCED", "MODEL INPUT", "DERIVED"]
+    basis: str
+
+
+class TaxReliefEstimate(BaseModel):
+    """Quick, hypothetical property-tax relief figure. Deterministic; never an assessor value."""
+
+    program_id: str
+    homes: int
+    land_value: float
+    improvements_value: float
+    assessed_value_basis: float
+    effective_tax_rate: float
+    annual_tax_estimate: float
+    eligible_lien_dates: int
+    estimated_relief: float
+    budget_tax_line: float
+    suggested_amount: float  # estimated_relief capped at the remaining tax line
+    capped_by_budget_line: bool
+    formula: str
+    assumptions: list[EstimateAssumption]
+    label: str = "ESTIMATE — hypothetical; not an assessor determination"
+
+
+def estimate_tax_relief(
+    program: Program,
+    inputs: CompareRequest,
+    homes: Optional[int] = None,
+    effective_tax_rate: Optional[float] = None,
+    built_share_at_lien_date: Optional[float] = None,
+    eligible_lien_dates: Optional[int] = None,
+) -> TaxReliefEstimate:
+    if program.simulation != "tax_cost_reduction":
+        raise SimulationRefused(f"{program.name} is not a property-tax relief lead; no tax estimate applies.")
+    rate = Decimal(str(effective_tax_rate)) if effective_tax_rate is not None else TAX_RATE_DEFAULT
+    share = Decimal(str(built_share_at_lien_date)) if built_share_at_lien_date is not None else BUILT_SHARE_DEFAULT
+    liens = int(eligible_lien_dates) if eligible_lien_dates is not None else LIEN_DATES_DEFAULT
+    if not (TAX_RATE_BOUNDS[0] <= rate <= TAX_RATE_BOUNDS[1]):
+        raise SimulationRefused("effective_tax_rate must be between 0.8% and 2%.")
+    if not (Decimal(0) <= share <= Decimal(1)):
+        raise SimulationRefused("built_share_at_lien_date must be between 0 and 1.")
+    if not (LIEN_DATES_BOUNDS[0] <= liens <= LIEN_DATES_BOUNDS[1]):
+        raise SimulationRefused("eligible_lien_dates must be between 1 and 5.")
+
+    result = compare(inputs)
+    n = homes if homes in inputs.candidate_home_counts else (inputs.documented_home_count or inputs.candidate_home_counts[0])
+    s = next(x for x in result.scenarios if x.homes == n)
+    land = s.land_cost
+    improvements = (s.site_work_cost + s.hard_cost) * share
+    basis = land + improvements
+    annual = (basis * rate).quantize(Decimal("1"))
+    relief = annual * liens
+    available = _tax_available(inputs)
+    suggested = min(relief, available) if available > 0 else Decimal(0)
+    window = program.availability_note
+    return TaxReliefEstimate(
+        program_id=program.id,
+        homes=n,
+        land_value=float(land),
+        improvements_value=float(improvements.quantize(Decimal("1"))),
+        assessed_value_basis=float(basis.quantize(Decimal("1"))),
+        effective_tax_rate=float(rate),
+        annual_tax_estimate=float(annual),
+        eligible_lien_dates=liens,
+        estimated_relief=float(relief),
+        budget_tax_line=float(available),
+        suggested_amount=float(suggested),
+        capped_by_budget_line=relief > available,
+        formula=(
+            f"(${land:,.0f} land + ${improvements:,.0f} improvements in place) × {rate * 100:.2f}% "
+            f"≈ ${annual:,.0f}/yr × {liens} eligible lien date{'s' if liens != 1 else ''} = ${relief:,.0f}"
+        ),
+        assumptions=[
+            EstimateAssumption(name="Land value", value=f"${land:,.0f}", label="MODEL INPUT",
+                               basis="The scenario's land cost (itself an ASSUMPTION); real assessed value UNKNOWN."),
+            EstimateAssumption(name="Share of site work + construction in place on the lien date", value=f"{share * 100:.0f}%",
+                               label="ASSUMPTION", basis="Mid-construction placeholder; actual construction status UNKNOWN."),
+            EstimateAssumption(name="Effective property-tax rate", value=f"{rate * 100:.2f}%", label="ASSUMPTION",
+                               basis="Organizers' data guide: use about 1% plus local assessments as an assumption; actual parcel rate not looked up."),
+            EstimateAssumption(name="Eligible lien dates", value=str(liens), label="SOURCED" if liens == 1 else "ASSUMPTION",
+                               basis=window if liens == 1 else "User/agent-selected; must fall within the program's operative window."),
+        ],
+    )
+
+
 # ---------------------------------------------------------------- screening
 
 
@@ -124,6 +222,7 @@ class Card(BaseModel):
     simulate_note: Optional[str]
     suggested_amount: Optional[float]
     estimated_savings_usd: None = None  # only the backend simulation produces amounts
+    tax_estimate: Optional[TaxReliefEstimate] = None  # quick hypothetical estimate for property-tax leads
 
 
 def _fact(project: Project, key: str) -> Optional[str]:
@@ -193,6 +292,10 @@ def screen(program: Program, project: Project, inputs: CompareRequest) -> Card:
         status = "potential_match"
 
     can_sim, note, suggested = _simulation_readiness(program, inputs)
+    tax_est = None
+    if program.simulation == "tax_cost_reduction" and can_sim:
+        tax_est = estimate_tax_relief(program, inputs)
+        suggested = tax_est.suggested_amount
     return Card(
         program_id=program.id,
         name=program.name,
@@ -215,6 +318,7 @@ def screen(program: Program, project: Project, inputs: CompareRequest) -> Card:
         can_simulate=can_sim,
         simulate_note=note,
         suggested_amount=suggested,
+        tax_estimate=tax_est,
     )
 
 
@@ -224,7 +328,7 @@ def _simulation_readiness(program: Program, inputs: CompareRequest) -> tuple[boo
             return False, "No property-tax carrying cost in this scenario — nothing to reduce. Add an assumed property-tax line first.", None
         if _group_already_applied(program, inputs):
             return False, "A property-tax exemption what-if is already applied; the same tax cannot be removed twice.", None
-        return True, "Enter the eligible property-tax cost a qualifying exemption might remove.", float(_tax_available(inputs))
+        return True, "Pre-filled with a quick estimate (see breakdown); adjust as you like.", float(_tax_available(inputs))
     if program.simulation in ("grant", "restricted_grant"):
         if any(f.id == f"hyp-{program.id}" for f in inputs.funding_sources):
             return False, "This program's hypothetical award is already applied.", None

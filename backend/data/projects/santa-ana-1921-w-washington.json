@@ -396,13 +396,13 @@
       "value": "CA",
       "status": "DOCUMENTED",
       "source_id": "sa-reso-2024-10",
-      "page": 1
+      "page": 1,
+      "note": "Resolution applies the California Subdivision Map Act and Government Code §65915."
     },
     "county": {
       "value": "Orange",
-      "status": "DOCUMENTED",
-      "source_id": "sa-reso-2024-10",
-      "page": 1
+      "status": "DERIVED",
+      "note": "Santa Ana is in Orange County (general knowledge). The resolutions do not state the county; 'Orange County' appears only in the applicant's name."
     },
     "city": {
       "value": "Santa Ana",

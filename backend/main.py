@@ -215,6 +215,27 @@ def incentive_simulate(req: SimulateRequest) -> dict:
     return incentives.simulate(project, req.inputs, req.program_id, req.amount).model_dump(mode="json")
 
 
+class EstimateRequest(ScenarioContext):
+    program_id: str
+    homes: Optional[int] = None
+    effective_tax_rate: Optional[float] = None
+    built_share_at_lien_date: Optional[float] = None
+    eligible_lien_dates: Optional[int] = None
+
+
+@app.post("/api/incentives/estimate-tax-relief")
+def incentive_estimate(req: EstimateRequest) -> dict:
+    """Quick, deterministic, hypothetical property-tax relief estimate (no Claude needed)."""
+    _get_or_404(req.project_id)
+    program = _program_or_404(req.program_id)
+    try:
+        est = incentives.estimate_tax_relief(program, req.inputs, req.homes, req.effective_tax_rate,
+                                             req.built_share_at_lien_date, req.eligible_lien_dates)
+    except incentives.SimulationRefused as e:
+        raise HTTPException(422, str(e))
+    return est.model_dump()
+
+
 @app.post("/api/scenarios/apply-proposal")
 def apply_proposal(req: ApplyRequest) -> dict:
     """The ONLY mutation path for advisor what-ifs; called by the UI's explicit confirm button."""

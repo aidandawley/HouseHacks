@@ -174,6 +174,29 @@ function CardView({
               </span>
             </label>
           ) : null}
+          {card.tax_estimate && (
+            <div className="adv-estimate">
+              <span className="tag illustrative">{card.tax_estimate.label}</span>
+              <p>{card.tax_estimate.formula}</p>
+              {card.tax_estimate.capped_by_budget_line && (
+                <p className="hint">
+                  Capped at the budget's property-tax line ({fmtUsd0(card.tax_estimate.budget_tax_line)}) — a saving can't exceed the cost.
+                </p>
+              )}
+              <details className="info">
+                <summary>ⓘ estimate assumptions</summary>
+                <div className="info-body">
+                  <ul className="adv-list">
+                    {card.tax_estimate.assumptions.map((a) => (
+                      <li key={a.name}>
+                        <strong>{a.name}:</strong> {a.value} <span className="muted">({a.label})</span> — {a.basis}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
+          )}
           {card.simulate_note && <p className="hint">{card.simulate_note}</p>}
           {card.can_simulate && (
             <button type="button" onClick={run} disabled={busy}>

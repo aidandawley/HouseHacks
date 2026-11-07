@@ -307,6 +307,26 @@ export interface IncentiveCard {
   can_simulate: boolean;
   simulate_note: string | null;
   suggested_amount: number | null;
+  tax_estimate: TaxReliefEstimate | null;
+}
+
+/** Quick hypothetical property-tax relief estimate — computed by the backend, never by the model. */
+export interface TaxReliefEstimate {
+  program_id: string;
+  homes: number;
+  land_value: number;
+  improvements_value: number;
+  assessed_value_basis: number;
+  effective_tax_rate: number;
+  annual_tax_estimate: number;
+  eligible_lien_dates: number;
+  estimated_relief: number;
+  budget_tax_line: number;
+  suggested_amount: number;
+  capped_by_budget_line: boolean;
+  formula: string;
+  assumptions: { name: string; value: string; label: string; basis: string }[];
+  label: string;
 }
 
 export interface ScenarioDelta {
